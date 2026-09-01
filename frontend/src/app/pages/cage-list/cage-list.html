@@ -1,0 +1,37 @@
+<main class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">
+        Colony Manager
+      </p>
+
+      <h1>Cages</h1>
+    </div>
+
+    <span class="count">
+      {{ cages().length }}
+    </span>
+  </header>
+
+  @if (loading()) {
+    <p>Loading cages...</p>
+  }
+
+  @if (!loading() && error()) {
+    <p role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="cage-list">
+      @for (cage of cages(); track cage.id) {
+        <app-cage-card
+          [cage]="cage"
+        />
+      } @empty {
+        <p>No cages found.</p>
+      }
+    </div>
+  }
+</main>

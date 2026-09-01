@@ -164,7 +164,6 @@ class Animal(models.Model):
     def __str__(self):
         return str(self.id)
 
-
 class AnimalLocalIdentifier(models.Model):
     class IdentifierType(models.TextChoices):
         EAR_TAG = "ear_tag", "Ear tag"
@@ -172,24 +171,41 @@ class AnimalLocalIdentifier(models.Model):
         TOE_NUMBER = "toe_number", "Toe number"
         OTHER = "other", "Other"
 
-    animal = models.ForeignKey(Animal, on_delete=models.RESTRICT, related_name="local_identifiers")
-    identifier_type = models.CharField(max_length=20, choices=IdentifierType.choices)
-    value = models.CharField(max_length=50)
-    room = models.ForeignKey(
-        Room, on_delete=models.RESTRICT, related_name="+",
-        help_text="Denormalized scope for the uniqueness constraint below. "
-                   "Must be kept in sync with the animal's current room "
-                   "(service-layer responsibility, not enforced by the schema).",
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.RESTRICT,
+        related_name="local_identifiers",
     )
+
+    identifier_type = models.CharField(
+        max_length=20,
+        choices=IdentifierType.choices,
+    )
+
+    value = models.CharField(max_length=50)
+
     assigned_date = models.DateField()
-    retired_date = models.DateField(null=True, blank=True)
+
+    retired_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
     notes = models.TextField(blank=True)
 
     class Meta:
         db_table = "animal_local_identifier"
+
         indexes = [
-            models.Index(fields=["identifier_type", "value"]),
+            models.Index(
+                fields=["identifier_type", "value"],
+            ),
         ]
+
+    def __str__(self):
+        return f"{self.value} ({self.get_identifier_type_display()})"
+    # def __str__(self):
+    #     return self.value
 
 
 # ---------------------------------------------------------------------------

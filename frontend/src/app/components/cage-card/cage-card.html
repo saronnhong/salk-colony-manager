@@ -1,0 +1,34 @@
+<a class="cage-card" [routerLink]="['/cages', cage.id]">
+    <div class="card-header">
+        <div>
+            <div class="cage-code">
+                {{ cage.cage_code }}
+            </div>
+
+            <div class="cage-type">
+                {{ cage.cage_type }}
+            </div>
+        </div>
+
+        <div class="animal-count">
+            {{ cage.animal_count }}
+            {{ cage.animal_count === 1 ? 'animal' : 'animals' }}
+        </div>
+    </div>
+
+    @if (cage.current_location) {
+    <div class="location">
+        <strong>{{ cage.current_location.room }}</strong>
+
+        <span>
+            {{ cage.current_location.rack }}
+            ·
+            {{ cage.current_location.position }}
+        </span>
+    </div>
+    } @else {
+    <div class="location">
+        Location unknown
+    </div>
+    }
+</a>

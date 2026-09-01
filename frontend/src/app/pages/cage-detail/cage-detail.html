@@ -1,0 +1,90 @@
+<main class="page">
+  <a
+    routerLink="/cages"
+    class="back-link"
+  >
+    ← Cages
+  </a>
+
+  @if (loading()) {
+    <p>Loading cage...</p>
+  }
+
+  @if (!loading() && error()) {
+    <p role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (!loading() && cage(); as currentCage) {
+    <header class="cage-header">
+      <div>
+        <p class="eyebrow">
+          Cage
+        </p>
+
+        <h1>
+          {{ currentCage.cage_code }}
+        </h1>
+
+        <p class="cage-type">
+          {{ currentCage.cage_type }}
+        </p>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>Location</h2>
+
+      @if (currentCage.current_location) {
+        <div class="location-card">
+          <strong>
+            {{ currentCage.current_location.room.name }}
+          </strong>
+
+          <span>
+            {{ currentCage.current_location.rack.rack_code }}
+            ·
+            {{ currentCage.current_location.position.position_label }}
+          </span>
+        </div>
+      } @else {
+        <p>Location unknown.</p>
+      }
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Animals</h2>
+
+        <span>
+          {{ currentCage.animals.length }}
+        </span>
+      </div>
+
+      <div class="animal-list">
+        @for (animal of currentCage.animals; track animal.id) {
+          <article class="animal-card">
+            <strong>
+              {{ animal.identifier || 'Unidentified' }}
+            </strong>
+
+            <div class="animal-details">
+              <span>
+                {{ animal.sex }}
+              </span>
+
+              <span>
+                {{ animal.date_of_birth }}
+              </span>
+            </div>
+          </article>
+        } @empty {
+          <p>
+            No animals are currently assigned to this cage.
+          </p>
+        }
+      </div>
+    </section>
+  }
+</main>
