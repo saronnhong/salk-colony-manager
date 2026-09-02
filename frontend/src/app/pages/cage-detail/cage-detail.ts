@@ -3,15 +3,16 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CageDetailModel } from '../../models/cage.model';
 import { CageService } from '../../services/cage.service';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-cage-detail',
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe,],
   templateUrl: './cage-detail.html',
   styleUrl: './cage-detail.scss',
 })
 export class CageDetail implements OnInit {
-    cage = signal<CageDetailModel | null>(null);
+  cage = signal<CageDetailModel | null>(null);
 
   loading = signal(true);
   error = signal('');

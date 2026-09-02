@@ -38,3 +38,25 @@
   flex-direction: column;
   gap: 0.25rem;
 }
+
+.responsibility {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.responsibility-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.responsibility-label {
+  color: #666;
+}
+
+.coverage {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}

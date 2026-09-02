@@ -128,7 +128,97 @@ class Cage(models.Model):
     def __str__(self):
         return self.cage_code
 
+class CageResponsibility(models.Model):
+    class ResponsibilityType(models.TextChoices):
+        PRIMARY = "primary", "Primary"
+        COVERAGE = "coverage", "Coverage"
 
+    cage = models.ForeignKey(
+        Cage,
+        on_delete=models.RESTRICT,
+        related_name="responsibilities",
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        related_name="cage_responsibilities",
+    )
+
+    responsibility_type = models.CharField(
+        max_length=20,
+        choices=ResponsibilityType.choices,
+    )
+
+    valid_from = models.DateTimeField()
+
+    valid_to = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        related_name="+",
+    )
+
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "cage_responsibility"
+
+        constraints = [
+            CheckConstraint(
+                condition=(
+                    Q(valid_to__isnull=True)
+                    | Q(valid_to__gt=F("valid_from"))
+                ),
+                name="cage_responsibility_valid_range_check",
+            ),
+            ExclusionConstraint(
+                name="no_overlapping_primary_cage_responsibility",
+                expressions=[
+                    ("cage", RangeOperators.EQUAL),
+                    (
+                        TsTzRange(
+                            "valid_from",
+                            "valid_to",
+                        ),
+                        RangeOperators.OVERLAPS,
+                    ),
+                ],
+                condition=Q(
+                    responsibility_type="primary"
+                ),
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "cage",
+                    "valid_from",
+                    "valid_to",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "user",
+                    "valid_from",
+                    "valid_to",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        name = self.user.get_full_name() or self.user.get_username()
+
+        return (
+            f"{self.cage.cage_code} - "
+            f"{name} - "
+            f"{self.get_responsibility_type_display()}"
+        )
 # ---------------------------------------------------------------------------
 # Animal identity
 # ---------------------------------------------------------------------------

@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.utils import timezone
+from django.db import models
+from django.db.models import Q
 
 from .models import (
     Animal,
@@ -79,10 +82,11 @@ class AnimalSerializer(serializers.ModelSerializer):
             "valid_from": location.valid_from,
         }
 
-
 class CageSummarySerializer(serializers.ModelSerializer):
     current_location = serializers.SerializerMethodField()
     animal_count = serializers.SerializerMethodField()
+    primary_owner = serializers.SerializerMethodField()
+    current_coverage = serializers.SerializerMethodField()
 
     class Meta:
         model = Cage
@@ -92,6 +96,8 @@ class CageSummarySerializer(serializers.ModelSerializer):
             "cage_type",
             "current_location",
             "animal_count",
+            "primary_owner",
+            "current_coverage",
         ]
 
     def get_current_location(self, obj):
@@ -115,10 +121,70 @@ class CageSummarySerializer(serializers.ModelSerializer):
             system_to__isnull=True,
         ).count()
 
+    def get_primary_owner(self, obj):
+        now = timezone.now()
+
+        responsibility = (
+            obj.responsibilities
+            .filter(
+                responsibility_type="primary",
+                valid_from__lte=now,
+            )
+            .filter(
+                Q(valid_to__isnull=True)
+                | Q(valid_to__gt=now)
+            )
+            .select_related("user")
+            .first()
+        )
+
+        if not responsibility:
+            return None
+
+        user = responsibility.user
+
+        return {
+            "id": user.id,
+            "name": user.get_full_name() or user.get_username(),
+        }
+
+
+    def get_current_coverage(self, obj):
+        now = timezone.now()
+
+        coverage = (
+            obj.responsibilities
+            .filter(
+                responsibility_type="coverage",
+                valid_from__lte=now,
+            )
+            .filter(
+                Q(valid_to__isnull=True)
+                | Q(valid_to__gt=now)
+            )
+            .select_related("user")
+            .order_by("valid_from")
+            .first()
+        )
+
+        if not coverage:
+            return None
+
+        user = coverage.user
+
+        return {
+            "id": user.id,
+            "name": user.get_full_name() or user.get_username(),
+            "valid_from": coverage.valid_from,
+            "valid_to": coverage.valid_to,
+        }
+
 
 class CageSerializer(serializers.ModelSerializer):
     current_location = serializers.SerializerMethodField()
     animals = serializers.SerializerMethodField()
+    primary_owner = serializers.SerializerMethodField()
+    current_coverage = serializers.SerializerMethodField()
 
     class Meta:
         model = Cage
@@ -126,11 +192,12 @@ class CageSerializer(serializers.ModelSerializer):
             "id",
             "cage_code",
             "cage_type",
-            "retired_reason",
             "retired_at",
             "created_at",
             "current_location",
             "animals",
+            "primary_owner",
+            "current_coverage",
         ]
 
     def get_current_location(self, obj):
@@ -165,7 +232,9 @@ class CageSerializer(serializers.ModelSerializer):
                 system_to__isnull=True,
             )
             .select_related("animal")
-            .prefetch_related("animal__local_identifiers")
+            .prefetch_related(
+                "animal__local_identifiers"
+            )
             .order_by("valid_from")
         )
 
@@ -178,3 +247,86 @@ class CageSerializer(serializers.ModelSerializer):
             animals,
             many=True,
         ).data
+
+    def get_primary_owner(self, obj):
+        now = timezone.now()
+
+        responsibility = (
+            obj.responsibilities
+            .filter(
+                responsibility_type="primary",
+                valid_from__lte=now,
+            )
+            .filter(
+                Q(valid_to__isnull=True)
+                | Q(valid_to__gt=now)
+            )
+            .select_related("user")
+            .first()
+        )
+
+        if not responsibility:
+            return None
+
+        user = responsibility.user
+
+        return {
+            "id": user.id,
+            "name": (
+                user.get_full_name()
+                or user.get_username()
+            ),
+        }
+
+    def get_current_coverage(self, obj):
+        now = timezone.now()
+
+        coverage = (
+            obj.responsibilities
+            .filter(
+                responsibility_type="coverage",
+                valid_from__lte=now,
+            )
+            .filter(
+                Q(valid_to__isnull=True)
+                | Q(valid_to__gt=now)
+            )
+            .select_related("user")
+            .order_by("valid_from")
+            .first()
+        )
+
+        if not coverage:
+            return None
+
+        user = coverage.user
+
+        return {
+            "id": user.id,
+            "name": (
+                user.get_full_name()
+                or user.get_username()
+            ),
+            "valid_from": coverage.valid_from,
+            "valid_to": coverage.valid_to,
+        }
+
+class AnimalMoveSerializer(serializers.Serializer):
+    destination_cage_id = serializers.UUIDField()
+    moved_at = serializers.DateTimeField(required=False)
+    reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+
+    def validate_destination_cage_id(self, value):
+        if not Cage.objects.filter(
+            id=value,
+            retired_at__isnull=True,
+        ).exists():
+            raise serializers.ValidationError(
+                "Destination cage does not exist or is retired."
+            )
+
+        return value

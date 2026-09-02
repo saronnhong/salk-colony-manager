@@ -11,7 +11,9 @@ from .models import (
     Strain,
     AnimalLocalIdentifier,
 )
+from .models import CageResponsibility
 
+admin.site.register(CageResponsibility)
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):

@@ -11,6 +11,8 @@ export interface CageSummary {
   cage_type: string;
   current_location: CageLocation | null;
   animal_count: number;
+  primary_owner: CageOwner | null;
+  current_coverage: CageCoverage | null;
 }
 
 export interface AnimalSummary {
@@ -46,4 +48,18 @@ export interface CageDetailModel {
   created_at: string;
   current_location: CageDetailLocation | null;
   animals: AnimalSummary[];
+  primary_owner: CageOwner | null;
+  current_coverage: CageCoverage | null;
+}
+
+export interface CageOwner {
+  id: number;
+  name: string;
+}
+
+export interface CageCoverage {
+  id: number;
+  name: string;
+  valid_from: string;
+  valid_to: string | null;
 }

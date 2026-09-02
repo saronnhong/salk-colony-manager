@@ -11,6 +11,7 @@ from colony.models import (
     AnimalLocalIdentifier,
     Cage,
     CageRackPositionAssignment,
+    CageResponsibility,
     Rack,
     RackPosition,
     Room,
@@ -25,6 +26,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
 
+        admin_user = User.objects.filter(
+            is_superuser=True
+        ).first()
+
+        if not admin_user:
+            raise CommandError(
+                "Create a superuser before running the demo seed."
+            )
+
         user = User.objects.filter(is_superuser=True).first()
 
         if not user:
@@ -32,6 +42,77 @@ class Command(BaseCommand):
                 "No superuser found. Create one first with "
                 "'python manage.py createsuperuser'."
             )
+
+        dani, _ = User.objects.get_or_create(
+            username="mo.dani",
+            defaults={
+                "first_name": "Danielle",
+                "last_name": "Marsh",
+                "email": "dani@example.com",
+            },
+        )
+
+        haerin, _ = User.objects.get_or_create(
+            username="kang.haerin",
+            defaults={
+                "first_name": "Haerin",
+                "last_name": "Kang",
+                "email": "haerin@example.com",
+            },
+        )
+
+        minji, _ = User.objects.get_or_create(
+            username="kim.minji",
+            defaults={
+                "first_name": "Minji",
+                "last_name": "Kim",
+                "email": "minji@example.com",
+            },
+        )
+
+        hanni, _ = User.objects.get_or_create(
+            username="pham.hanni",
+            defaults={
+                "first_name": "Hanni",
+                "last_name": "Pham",
+                "email": "hanni@example.com",
+            },
+        )
+
+        hyein, _ = User.objects.get_or_create(
+            username="lee.hyein",
+            defaults={
+                "first_name": "Hyein",
+                "last_name": "Lee",
+                "email": "hyein@example.com",
+            },
+        )
+        responsibility_start = datetime(
+            2026,
+            8,
+            25,
+            8,
+            0,
+            tzinfo=timezone.utc,
+        )
+
+        coverage_start = datetime(
+            2026,
+            9,
+            1,
+            7,
+            0,
+            tzinfo=timezone.utc,
+        )
+
+        coverage_end = datetime(
+            2026,
+            9,
+            8,
+            7,
+            0,
+            tzinfo=timezone.utc,
+        )
 
         self.stdout.write("Creating demo colony data...")
 
@@ -124,6 +205,39 @@ class Command(BaseCommand):
             )
 
             cages.append(cage)
+
+        primary_assignments = [
+            (cages[0], dani),
+            (cages[1], haerin),
+            (cages[2], hanni),
+            (cages[3], minji),
+            (cages[4], hyein),
+            (cages[5], dani),
+        ]
+
+        for cage, user in primary_assignments:
+            CageResponsibility.objects.get_or_create(
+                cage=cage,
+                user=user,
+                responsibility_type=CageResponsibility.ResponsibilityType.PRIMARY,
+                valid_from=responsibility_start,
+                defaults={
+                    "assigned_by": admin_user,
+                    "notes": "Demo primary cage responsibility",
+                },
+            )
+
+        CageResponsibility.objects.get_or_create(
+            cage=cages[0],
+            user=haerin,
+            responsibility_type=CageResponsibility.ResponsibilityType.COVERAGE,
+            valid_from=coverage_start,
+            valid_to=coverage_end,
+            defaults={
+                "assigned_by": admin_user,
+                "notes": "Demo temporary vacation coverage",
+            },
+        )
 
         # Use a fixed timestamp so rerunning the seed command
         # doesn't create a different temporal assignment.
