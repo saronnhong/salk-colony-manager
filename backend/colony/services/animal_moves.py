@@ -62,7 +62,7 @@ def move_animal(
             "Animal does not currently have a cage assignment."
         )
 
-    if current_assignment.cage == destination_cage.id:
+    if current_assignment.cage.pk == destination_cage.pk:
         raise ValidationError(
             "Animal is already assigned to this cage."
         )
@@ -77,9 +77,9 @@ def move_animal(
         performed_by=performed_by,
         reason=reason,
         metadata={
-            "animal_id": str(animal.id),
-            "source_cage_id": str(current_assignment.cage),
-            "destination_cage_id": str(destination_cage.id),
+            "animal_id": str(animal.pk),
+            "source_cage_id": str(current_assignment.cage.pk),
+            "destination_cage_id": str(destination_cage.pk),
             "moved_at": moved_at.isoformat(),
         },
     )
@@ -92,14 +92,14 @@ def move_animal(
         recorded_by=performed_by,
         notes=reason,
         metadata={
-            "source_cage_id": str(current_assignment.cage),
-            "destination_cage_id": str(destination_cage.id),
+            "source_cage_id": str(current_assignment.cage.pk),
+            "destination_cage_id": str(destination_cage.pk),
         },
     )
 
     old_assignment_values = {
-        "animal_id": str(current_assignment.animal),
-        "cage_id": str(current_assignment.cage),
+        "animal_id": str(animal.pk),
+        "cage_id": str(current_assignment.cage.pk),
         "valid_from": current_assignment.valid_from.isoformat(),
         "valid_to": (
             current_assignment.valid_to.isoformat()
@@ -141,8 +141,8 @@ def move_animal(
         action=AuditLog.Action.INSERT,
         old_values=None,
         new_values={
-            "animal_id": str(animal.id),
-            "cage_id": str(destination_cage.id),
+            "animal_id": str(animal.pk),
+            "cage_id": str(destination_cage.pk),
             "valid_from": moved_at.isoformat(),
             "valid_to": None,
         },

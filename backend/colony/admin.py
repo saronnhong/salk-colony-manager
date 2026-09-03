@@ -10,6 +10,7 @@ from .models import (
     Room,
     Strain,
     AnimalLocalIdentifier,
+    RackCurrentRoom
 )
 from .models import CageResponsibility
 
@@ -23,15 +24,23 @@ class RoomAdmin(admin.ModelAdmin):
 
 @admin.register(Rack)
 class RackAdmin(admin.ModelAdmin):
-    list_display = ("rack_code", "room", "retired_at")
-    list_filter = ("room",)
-    search_fields = ("rack_code", "room__name")
+    list_display = ("rack_code", "current_room_name")
+
+    def current_room_name(self, obj):
+        try:
+            return obj.current_room.room.name
+        except RackCurrentRoom.DoesNotExist:
+            return "—"
+
+    current_room_name.short_description = "Current room"
 
 
 @admin.register(RackPosition)
 class RackPositionAdmin(admin.ModelAdmin):
-    list_display = ("position_label", "rack", "retired_at")
-    list_filter = ("rack__room", "rack")
+    list_display = (
+        "position_label",
+        "rack",
+    )
     search_fields = (
         "position_label",
         "rack__rack_code",

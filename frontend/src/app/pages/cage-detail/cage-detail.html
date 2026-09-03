@@ -1,105 +1,222 @@
-<main class="page">
+<main class="page cage-detail">
   <a routerLink="/cages" class="back-link">← Cages</a>
 
   @if (loading()) {
-    <p>Loading cage...</p>
+  <p>Loading cage...</p>
   }
 
   @if (!loading() && error()) {
-    <p role="alert">{{ error() }}</p>
+  <p role="alert">{{ error() }}</p>
   }
 
   @if (!loading() && cage(); as currentCage) {
-    <header class="cage-header">
-      <div>
-        <p class="eyebrow">Cage</p>
-        <h1>{{ currentCage.cage_code }}</h1>
-        <p class="cage-type">{{ currentCage.cage_type }}</p>
+  <header class="cage-header">
+    <div>
+      <p class="eyebrow">Cage</p>
+      <h1>{{ currentCage.cage_code }}</h1>
+      <p class="cage-type">{{ currentCage.cage_type }}</p>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header">
+      <h2>Current location</h2>
+
+      <button type="button" class="primary-button" (click)="showMoveForm()">
+        Move cage
+      </button>
+    </div>
+
+    @if (cage()?.current_location; as location) {
+    <p class="location-summary">
+      {{ location.room.name }}
+      ·
+      {{ location.rack.rack_code }}
+      ·
+      {{ location.position.position_label }}
+    </p>
+    } @else {
+    <p>No current rack position.</p>
+    }
+
+    @if (moveSuccess()) {
+    <p class="success-message" aria-live="polite">
+      {{ moveSuccess() }}
+    </p>
+    }
+
+    @if (moveFormVisible()) {
+    <form class="move-form" [formGroup]="moveForm" (ngSubmit)="submitMove()">
+      <div class="form-field">
+        <label for="destination-position">
+          Destination position
+        </label>
+
+        <select id="destination-position" formControlName="destination_rack_position_id">
+          <option [ngValue]="null">
+            Select a rack position
+          </option>
+
+          @for (
+          position of rackPositions();
+          track position.id
+          ) {
+          @if (!position.occupied) {
+          <option [ngValue]="position.id">
+            {{ position.room || 'Unknown room' }}
+            —
+            {{ position.rack }}
+            /
+            {{ position.position_label }}
+          </option>
+          }
+          }
+        </select>
+
+        @if (
+        moveForm.controls.destination_rack_position_id.touched &&
+        moveForm.controls.destination_rack_position_id.invalid
+        ) {
+        <p class="field-error">
+          Select a destination position.
+        </p>
+        }
       </div>
-    </header>
 
-    <section class="section">
-      <h2>Location</h2>
+      <div class="form-field">
+        <label for="move-reason">
+          Reason
+          <span>(optional)</span>
+        </label>
 
-      @if (currentCage.current_location) {
-        <div class="location-card">
-          <strong>
-            {{ currentCage.current_location.room.name }}
-          </strong>
+        <textarea id="move-reason" formControlName="reason" rows="3"
+          placeholder="Why is this cage being moved?"></textarea>
+      </div>
 
-          <span>
-            {{ currentCage.current_location.rack.rack_code }}
-            ·
-            {{ currentCage.current_location.position.position_label }}
-          </span>
-        </div>
-      } @else {
-        <p>Location unknown.</p>
+      @if (moveError()) {
+      <p class="error-message" aria-live="assertive">
+        {{ moveError() }}
+      </p>
       }
-    </section>
 
-    <section class="section">
-      <h2>Responsibility</h2>
+      <div class="form-actions">
+        <button type="button" class="secondary-button" (click)="cancelMove()" [disabled]="moving()">
+          Cancel
+        </button>
 
-      <div class="responsibility-card">
-        <div class="responsibility-row">
-          <span class="label">Primary</span>
-
-          @if (currentCage.primary_owner) {
-            <strong>
-              {{ currentCage.primary_owner.name }}
-            </strong>
+        <button type="submit" class="primary-button" [disabled]="moving()">
+          @if (moving()) {
+          Moving...
           } @else {
-            <span>Unassigned</span>
+          Confirm move
           }
-        </div>
+        </button>
+      </div>
+    </form>
+    }
+  </section>
 
-        <div class="responsibility-row">
-          <span class="label">Coverage</span>
+  <section>
+    <h2>Location history</h2>
 
-          @if (currentCage.current_coverage) {
-            <strong>
-              {{ currentCage.current_coverage.name }}
-            </strong>
+    @if (locationHistory().length === 0) {
+    <p>No location history found.</p>
+    } @else {
+    <div class="history-list">
+      @for (
+      item of locationHistory();
+      track item.id
+      ) {
+      <article class="history-item">
+        <strong>
+          {{ item.room || 'Unknown room' }}
+          ·
+          {{ item.rack }}
+          ·
+          {{ item.position }}
+        </strong>
+
+        <p>
+          From {{ item.valid_from | date:'medium' }}
+
+          @if (item.valid_to) {
+          to {{ item.valid_to | date:'medium' }}
           } @else {
-            <span>None</span>
+          · Current
           }
-        </div>
+        </p>
 
-        @if (currentCage.current_coverage?.valid_to) {
-          <div class="coverage-dates">
-            Coverage through
-            {{
-              currentCage.current_coverage?.valid_to
-                | date:'mediumDate'
-            }}
-          </div>
+        @if (item.reason) {
+        <p>{{ item.reason }}</p>
+        }
+      </article>
+      }
+    </div>
+    }
+  </section>
+
+  <section class="section">
+    <h2>Responsibility</h2>
+
+    <div class="responsibility-card">
+      <div class="responsibility-row">
+        <span class="label">Primary</span>
+
+        @if (currentCage.primary_owner) {
+        <strong>
+          {{ currentCage.primary_owner.name }}
+        </strong>
+        } @else {
+        <span>Unassigned</span>
         }
       </div>
-    </section>
 
-    <section class="section">
-      <div class="section-header">
-        <h2>Animals</h2>
-        <span>{{ currentCage.animals.length }}</span>
-      </div>
+      <div class="responsibility-row">
+        <span class="label">Coverage</span>
 
-      <div class="animal-list">
-        @for (animal of currentCage.animals; track animal.id) {
-          <article class="animal-card">
-            <strong>
-              {{ animal.identifier || 'Unidentified' }}
-            </strong>
-
-            <div class="animal-details">
-              <span>{{ animal.sex }}</span>
-              <span>{{ animal.date_of_birth }}</span>
-            </div>
-          </article>
-        } @empty {
-          <p>No animals are currently assigned to this cage.</p>
+        @if (currentCage.current_coverage) {
+        <strong>
+          {{ currentCage.current_coverage.name }}
+        </strong>
+        } @else {
+        <span>None</span>
         }
       </div>
-    </section>
+
+      @if (currentCage.current_coverage?.valid_to) {
+      <div class="coverage-dates">
+        Coverage through
+        {{
+        currentCage.current_coverage?.valid_to
+        | date:'mediumDate'
+        }}
+      </div>
+      }
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-header">
+      <h2>Animals</h2>
+      <span>{{ currentCage.animals.length }}</span>
+    </div>
+
+    <div class="animal-list">
+      @for (animal of currentCage.animals; track animal.id) {
+      <article class="animal-card">
+        <a [routerLink]="['/animals', animal.id]">
+          {{ animal.identifier || 'Unidentified animal' }}
+        </a>
+
+        <div class="animal-details">
+          <span>{{ animal.sex }}</span>
+          <span>{{ animal.date_of_birth }}</span>
+        </div>
+      </article>
+      } @empty {
+      <p>No animals are currently assigned to this cage.</p>
+      }
+    </div>
+  </section>
   }
 </main>

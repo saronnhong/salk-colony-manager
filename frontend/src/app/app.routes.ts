@@ -6,6 +6,7 @@ import { Routes } from '@angular/router';
 
 import { CageList } from './pages/cage-list/cage-list';
 import { CageDetail } from './pages/cage-detail/cage-detail';
+import { AnimalDetail } from './components/animal-detail/animal-detail';
 
 export const routes: Routes = [
   {
@@ -20,6 +21,10 @@ export const routes: Routes = [
   {
     path: 'cages/:id',
     component: CageDetail
+  },
+  {
+    path: 'animals/:id',
+    component: AnimalDetail
   },
   {
     path: '**',

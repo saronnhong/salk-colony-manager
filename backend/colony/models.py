@@ -11,10 +11,6 @@ as raw SQL in migrations/0003_death_guard_triggers_and_views.py:
      reference other tables).
   2. The animal_current_location / cage_current_location views (§6 of the
      design doc) — modeled here as unmanaged models pointed at those views.
-
-One manual step this file does NOT solve: keeping
-AnimalLocalIdentifier.room in sync with the animal's current room is a
-service-layer/signal responsibility, not a schema one — see the design doc.
 """
 
 import uuid
@@ -57,7 +53,6 @@ class Room(models.Model):
 
 
 class Rack(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.RESTRICT, related_name="racks")
     rack_code = models.CharField(max_length=50)
     retired_at = models.DateTimeField(null=True, blank=True)
 
@@ -65,7 +60,7 @@ class Rack(models.Model):
         db_table = "rack"
 
     def __str__(self):
-        return f"{self.room.name} / {self.rack_code}"
+        return self.rack_code
 
 
 class RackPosition(models.Model):
@@ -355,44 +350,252 @@ class AnimalCageAssignment(models.Model):
 
 
 class CageRackPositionAssignment(models.Model):
-    cage = models.ForeignKey(Cage, on_delete=models.RESTRICT, related_name="position_assignments")
-    rack_position = models.ForeignKey(RackPosition, on_delete=models.RESTRICT, related_name="cage_assignments")
-    valid_from = models.DateTimeField()
-    valid_to = models.DateTimeField(null=True, blank=True)
-    system_from = models.DateTimeField(auto_now_add=True)
-    system_to = models.DateTimeField(null=True, blank=True)
-    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.RESTRICT, related_name="+")
-    correction_of = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.RESTRICT, related_name="corrections",
+    cage = models.ForeignKey(
+        Cage,
+        on_delete=models.RESTRICT,
+        related_name="position_assignments",
     )
+
+    rack_position = models.ForeignKey(
+        RackPosition,
+        on_delete=models.RESTRICT,
+        related_name="cage_assignments",
+    )
+
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    system_from = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    system_to = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        related_name="+",
+    )
+
+    correction_of = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="corrections",
+    )
+
     reason = models.TextField(blank=True)
 
     class Meta:
         db_table = "cage_rack_position_assignment"
+
         constraints = [
             CheckConstraint(
-                condition=Q(valid_to__isnull=True) | Q(valid_to__gt=F("valid_from")),
+                condition=(
+                    Q(valid_to__isnull=True)
+                    | Q(valid_to__gt=F("valid_from"))
+                ),
                 name="cage_position_assignment_valid_range_check",
             ),
+
+            # A physical rack position cannot contain two cages
+            # during overlapping real-world time intervals.
             ExclusionConstraint(
                 name="no_cage_double_booked_position",
                 expressions=[
-                    ("rack_position", RangeOperators.EQUAL),
-                    (TsTzRange("valid_from", "valid_to"), RangeOperators.OVERLAPS),
+                    (
+                        "rack_position",
+                        RangeOperators.EQUAL,
+                    ),
+                    (
+                        TsTzRange(
+                            "valid_from",
+                            "valid_to",
+                        ),
+                        RangeOperators.OVERLAPS,
+                    ),
+                ],
+                condition=Q(system_to__isnull=True),
+            ),
+
+            # A cage cannot be recorded in two physical positions
+            # during overlapping real-world time intervals.
+            ExclusionConstraint(
+                name="no_cage_in_two_positions",
+                expressions=[
+                    (
+                        "cage",
+                        RangeOperators.EQUAL,
+                    ),
+                    (
+                        TsTzRange(
+                            "valid_from",
+                            "valid_to",
+                        ),
+                        RangeOperators.OVERLAPS,
+                    ),
                 ],
                 condition=Q(system_to__isnull=True),
             ),
         ]
+
         indexes = [
-            models.Index(fields=["cage", "valid_from", "valid_to"]),
-            models.Index(fields=["rack_position", "valid_from", "valid_to"]),
+            models.Index(
+                fields=[
+                    "cage",
+                    "valid_from",
+                    "valid_to",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "rack_position",
+                    "valid_from",
+                    "valid_to",
+                ]
+            ),
             models.Index(
                 fields=["cage"],
-                condition=Q(valid_to__isnull=True, system_to__isnull=True),
+                condition=Q(
+                    valid_to__isnull=True,
+                    system_to__isnull=True,
+                ),
                 name="cage_position_current_idx",
             ),
         ]
 
+class RackRoomAssignment(models.Model):
+    rack = models.ForeignKey(
+        Rack,
+        on_delete=models.RESTRICT,
+        related_name="room_assignments",
+    )
+
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.RESTRICT,
+        related_name="rack_assignments",
+    )
+
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    system_from = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    system_to = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        related_name="+",
+    )
+
+    correction_of = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="corrections",
+    )
+
+    reason = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "rack_room_assignment"
+
+        constraints = [
+            CheckConstraint(
+                condition=(
+                    Q(valid_to__isnull=True)
+                    | Q(valid_to__gt=F("valid_from"))
+                ),
+                name="rack_room_assignment_valid_range_check",
+            ),
+
+            ExclusionConstraint(
+                name="no_rack_in_two_rooms",
+                expressions=[
+                    (
+                        "rack",
+                        RangeOperators.EQUAL,
+                    ),
+                    (
+                        TsTzRange(
+                            "valid_from",
+                            "valid_to",
+                        ),
+                        RangeOperators.OVERLAPS,
+                    ),
+                ],
+                condition=Q(system_to__isnull=True),
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "rack",
+                    "valid_from",
+                    "valid_to",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "room",
+                    "valid_from",
+                    "valid_to",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.rack.rack_code} → "
+            f"{self.room.name}"
+        )
+
+class RackCurrentRoom(models.Model):
+    rack = models.OneToOneField(
+        Rack,
+        primary_key=True,
+        db_column="rack_id",
+        on_delete=models.DO_NOTHING,
+        related_name="current_room",
+    )
+
+    room = models.ForeignKey(
+        Room,
+        db_column="room_id",
+        on_delete=models.DO_NOTHING,
+        related_name="+",
+    )
+
+    valid_from = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "rack_current_room"
+
+    def __str__(self):
+        return (
+            f"{self.rack.rack_code} → "
+            f"{self.room.name}"
+        )
 
 # Unmanaged models backing the current-location views created in
 # migrations/0003_death_guard_triggers_and_views.py. Use these for read

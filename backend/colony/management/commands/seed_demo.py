@@ -16,6 +16,7 @@ from colony.models import (
     RackPosition,
     Room,
     Strain,
+    RackRoomAssignment,
 )
 
 
@@ -131,6 +132,17 @@ class Command(BaseCommand):
         # ---------------------------------------------------------
         # Rooms
         # ---------------------------------------------------------
+        
+        # Use a fixed timestamp so rerunning the seed command
+        # doesn't create a different temporal assignment.
+        assignment_start = datetime(
+            2026,
+            8,
+            25,
+            8,
+            0,
+            tzinfo=timezone.utc,
+        )
 
         room_a, _ = Room.objects.get_or_create(
             name="Mouse Room A",
@@ -161,6 +173,30 @@ class Command(BaseCommand):
             rack_code="RACK-B",
             defaults={
                 "room": room_b,
+            },
+        )
+
+        # ---------------------------------------------------------
+        # Rack Room Assignment
+        # ---------------------------------------------------------
+
+        RackRoomAssignment.objects.get_or_create(
+            rack=rack_a,
+            room=room_a,
+            valid_from=assignment_start,
+            defaults={
+                "recorded_by": admin_user,
+                "reason": "Initial demo rack room assignment",
+            },
+        )
+
+        RackRoomAssignment.objects.get_or_create(
+            rack=rack_b,
+            room=room_b,
+            valid_from=assignment_start,
+            defaults={
+                "recorded_by": admin_user,
+                "reason": "Initial demo rack room assignment",
             },
         )
 
@@ -239,16 +275,7 @@ class Command(BaseCommand):
             },
         )
 
-        # Use a fixed timestamp so rerunning the seed command
-        # doesn't create a different temporal assignment.
-        assignment_start = datetime(
-            2026,
-            8,
-            25,
-            8,
-            0,
-            tzinfo=timezone.utc,
-        )
+        
 
         # ---------------------------------------------------------
         # Cage -> rack position assignments

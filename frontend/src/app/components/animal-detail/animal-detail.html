@@ -1,0 +1,402 @@
+@if (loading()) {
+<p>Loading animal...</p>
+}
+
+@if (error()) {
+<p>{{ error() }}</p>
+}
+
+@if (!loading() && animal(); as currentAnimal) {
+<main class="animal-detail">
+    <header>
+        <p class="eyebrow">Animal</p>
+
+        <h1>
+            {{ currentAnimal.identifier || 'No local identifier' }}
+        </h1>
+
+        <p>{{ currentAnimal.id }}</p>
+    </header>
+
+    <section>
+        <h2>Animal information</h2>
+
+        <dl>
+            <div>
+                <dt>Sex</dt>
+                <dd>{{ currentAnimal.sex }}</dd>
+            </div>
+
+            <div>
+                <dt>Date of birth</dt>
+                <dd>
+                    @if (currentAnimal.date_of_birth) {
+                    {{ currentAnimal.date_of_birth | date }}
+                    } @else {
+                    Unknown
+                    }
+                </dd>
+            </div>
+
+            <div>
+                <dt>Species</dt>
+                <dd>{{ currentAnimal.species }}</dd>
+            </div>
+
+            <div>
+                <dt>Strain</dt>
+                <dd>
+                    {{ currentAnimal.strain_name || 'Unknown' }}
+                </dd>
+            </div>
+        </dl>
+    </section>
+
+    <section>
+        <div class="section-header">
+            <h2>Current cage</h2>
+
+            <button type="button" class="primary-button" (click)="showMoveForm()">
+                Move animal
+            </button>
+        </div>
+
+        @if (currentAnimal.current_location) {
+        <a class="cage-link" [routerLink]="[
+        '/cages',
+        currentAnimal.current_location.cage_id
+      ]">
+            {{ currentAnimal.current_location.cage_code }}
+        </a>
+        } @else {
+        <p>No current cage assignment.</p>
+        }
+
+        @if (moveSuccess()) {
+        <p class="success-message" aria-live="polite">
+            {{ moveSuccess() }}
+        </p>
+        }
+
+        @if (moveFormVisible()) {
+        <form class="move-form" [formGroup]="moveForm" (ngSubmit)="submitMove()">
+            <div class="form-field">
+                <label for="destination-cage">
+                    Destination cage
+                </label>
+
+                <select id="destination-cage" formControlName="destination_cage_id">
+                    <option value="">
+                        Select a cage
+                    </option>
+
+                    @for (cage of cages(); track cage.id) {
+                    @if (
+                    cage.id !==
+                    currentAnimal.current_location?.cage_id
+                    ) {
+                    <option [value]="cage.id">
+                        {{ cage.cage_code }}
+                        —
+                        {{ cage.current_location?.room || 'Unknown room' }}
+                        /
+                        {{ cage.current_location?.rack || 'Unknown rack' }}
+                        /
+                        {{ cage.current_location?.position || 'Unknown position' }}
+                    </option>
+                    }
+                    }
+                </select>
+
+                @if (
+                moveForm.controls.destination_cage_id.touched &&
+                moveForm.controls.destination_cage_id.invalid
+                ) {
+                <p class="field-error">
+                    Select a destination cage.
+                </p>
+                }
+            </div>
+
+            <div class="form-field">
+                <label for="move-reason">
+                    Reason
+                    <span>(optional)</span>
+                </label>
+
+                <textarea id="move-reason" formControlName="reason" rows="3"
+                    placeholder="Why is this animal being moved?"></textarea>
+            </div>
+
+            @if (moveError()) {
+            <p class="error-message" aria-live="assertive">
+                {{ moveError() }}
+            </p>
+            }
+
+            <div class="form-actions">
+                <button type="button" class="secondary-button" (click)="cancelMove()" [disabled]="moving()">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-button" [disabled]="moving()">
+                    @if (moving()) {
+                    Moving...
+                    } @else {
+                    Confirm move
+                    }
+                </button>
+            </div>
+        </form>
+        }
+    </section>
+
+    <section>
+        <div class="section-header">
+            <h2>Husbandry</h2>
+
+            <button type="button" class="primary-button" (click)="showEventForm()">
+                Record event
+            </button>
+
+        </div>
+
+        @if (eventSuccess()) {
+        <p class="success-message" aria-live="polite">
+            {{ eventSuccess() }}
+        </p>
+        }
+
+        @if (eventFormVisible()) {
+        <form class="move-form" [formGroup]="eventForm" (ngSubmit)="submitEvent()">
+            <div class="form-field">
+                <label for="event-type">
+                    Event type
+                </label>
+
+                <select id="event-type" formControlName="event_type">
+                    <option value="">
+                        Select an event
+                    </option>
+
+                    @for (
+                    option of eventTypes;
+                    track option.value
+                    ) {
+                    <option [value]="option.value">
+                        {{ option.label }}
+                    </option>
+                    }
+                </select>
+            </div>
+
+            @if (
+            eventForm.controls.event_type.value === 'weight'
+            ) {
+            <div class="form-field">
+                <label for="weight-grams">
+                    Weight (g)
+                </label>
+
+                <input id="weight-grams" type="number" min="0" step="0.01" formControlName="weight_grams"
+                    inputmode="decimal" />
+            </div>
+            }
+
+            @if (
+            eventForm.controls.event_type.value === 'treatment'
+            ) {
+            <div class="form-field">
+                <label for="treatment-name">
+                    Treatment
+                </label>
+
+                <input id="treatment-name" type="text" formControlName="treatment_name"
+                    placeholder="Medication or procedure" />
+            </div>
+
+            <div class="form-field">
+                <label for="treatment-dose">
+                    Dose
+                    <span>(optional)</span>
+                </label>
+
+                <input id="treatment-dose" type="text" formControlName="dose" placeholder="Example: 5 mg/kg" />
+            </div>
+
+            <div class="form-field">
+                <label for="treatment-route">
+                    Route
+                    <span>(optional)</span>
+                </label>
+
+                <input id="treatment-route" type="text" formControlName="route" placeholder="Example: oral, IP, SC" />
+            </div>
+            }
+
+            <div class="form-field">
+                <label for="event-datetime">
+                    Event date and time
+                </label>
+
+                <input id="event-datetime" type="datetime-local" formControlName="event_datetime" />
+            </div>
+
+            <div class="form-field">
+                <label for="event-notes">
+                    Notes
+                    <span>(optional)</span>
+                </label>
+
+                <textarea id="event-notes" formControlName="notes" rows="3"
+                    placeholder="Add notes about this event"></textarea>
+            </div>
+
+            @if (eventError()) {
+            <p class="error-message" aria-live="assertive">
+                {{ eventError() }}
+            </p>
+            }
+
+            <div class="form-actions">
+                <button type="button" class="secondary-button" (click)="cancelEvent()" [disabled]="savingEvent()">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-button" [disabled]="savingEvent()">
+                    @if (savingEvent()) {
+                    Saving...
+                    } @else {
+                    Record event
+                    }
+                </button>
+            </div>
+        </form>
+        }
+        <div class="event-filters">
+            <button type="button" [class.active]="eventFilter() === 'today'" (click)="setEventFilter('today')">
+                Today
+            </button>
+
+            <button type="button" [class.active]="eventFilter() === 'yesterday'" (click)="setEventFilter('yesterday')">
+                Yesterday
+            </button>
+
+            <button type="button" [class.active]="eventFilter() === 'all'" (click)="setEventFilter('all')">
+                All
+            </button>
+        </div>
+
+        @if (filteredHusbandryEvents().length === 0) {
+        <p class="empty-state">
+            No husbandry events found.
+        </p>
+        } @else {
+        <div class="event-list">
+            @for (
+            event of filteredHusbandryEvents();
+            track event.id
+            ) {
+            <article class="event-item">
+                <div class="event-header">
+                    <strong>
+                        {{ getEventLabel(event.event_type) }}
+                    </strong>
+
+                    <time>
+                        {{ event.event_datetime | date:'medium' }}
+                    </time>
+                </div>
+                @if (
+                event.event_type === 'weight' &&
+                event.weight_grams !== null
+                ) {
+                <p class="event-detail">
+                    <strong>Weight:</strong>
+                    {{ event.weight_grams }} g
+                </p>
+                }
+
+                @if (
+                event.event_type === 'treatment' &&
+                event.treatment
+                ) {
+                <div class="event-detail">
+                    <p>
+                        <strong>Drug:</strong>
+                        {{ event.treatment.drug_name }}
+                    </p>
+
+                    @if (event.treatment.dose) {
+                    <p>
+                        <strong>Dose:</strong>
+                        {{ event.treatment.dose }}
+                    </p>
+                    }
+
+                    @if (event.treatment.route) {
+                    <p>
+                        <strong>Route:</strong>
+                        {{ event.treatment.route }}
+                    </p>
+                    }
+                </div>
+                }
+                @if (event.notes) {
+                <p>{{ event.notes }}</p>
+                }
+
+                <p class="event-meta">
+                    Recorded by
+                    {{ event.recorded_by_name || 'Unknown user' }}
+                </p>
+            </article>
+            }
+        </div>
+        }
+    </section>
+
+    <section>
+        <h2>Location history</h2>
+
+        @if (locationHistory().length === 0) {
+        <p>No location history found.</p>
+        } @else {
+        <div class="history-list">
+            @for (
+            item of locationHistory();
+            track item.id
+            ) {
+            <article class="history-item">
+                <strong>{{ item.cage_code }}</strong>
+
+                <p>
+                    {{ item.room || 'Unknown room' }}
+                    ·
+                    {{ item.rack || 'Unknown rack' }}
+                    ·
+                    {{ item.position || 'Unknown position' }}
+                </p>
+
+                <p>
+                    From
+                    {{ item.valid_from | date:'medium' }}
+
+                    @if (item.valid_to) {
+                    to
+                    {{ item.valid_to | date:'medium' }}
+                    } @else {
+                    · Current
+                    }
+                </p>
+
+                @if (item.reason) {
+                <p>{{ item.reason }}</p>
+                }
+            </article>
+            }
+        </div>
+        }
+    </section>
+</main>
+}

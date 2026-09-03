@@ -4,7 +4,10 @@ import { Observable } from 'rxjs';
 
 import {
   CageDetailModel,
-  CageSummary
+  CageSummary,
+  CageMoveRequest,
+  RackPositionSummary,
+  CageLocationHistory,
 } from '../models/cage.model';
 
 @Injectable({
@@ -13,7 +16,7 @@ import {
 export class CageService {
   private readonly apiUrl = 'http://127.0.0.1:8000/api/cages';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getCages(): Observable<CageSummary[]> {
     return this.http.get<CageSummary[]>(
@@ -24,6 +27,30 @@ export class CageService {
   getCage(id: string): Observable<CageDetailModel> {
     return this.http.get<CageDetailModel>(
       `${this.apiUrl}/${id}/`
+    );
+  }
+
+  moveCage(
+    cageId: string,
+    request: CageMoveRequest
+  ): Observable<CageDetailModel> {
+    return this.http.post<CageDetailModel>(
+      `${this.apiUrl}/${cageId}/move/`,
+      request
+    );
+  }
+
+  getRackPositions(): Observable<RackPositionSummary[]> {
+    return this.http.get<RackPositionSummary[]>(
+      'http://127.0.0.1:8000/api/rack-positions/'
+    );
+  }
+
+  getLocationHistory(
+    cageId: string
+  ): Observable<CageLocationHistory[]> {
+    return this.http.get<CageLocationHistory[]>(
+      `${this.apiUrl}/${cageId}/location-history/`
     );
   }
 }

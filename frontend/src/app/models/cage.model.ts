@@ -63,3 +63,29 @@ export interface CageCoverage {
   valid_from: string;
   valid_to: string | null;
 }
+
+export interface CageMoveRequest {
+  destination_rack_position_id: number;
+  moved_at?: string;
+  reason?: string;
+}
+
+export interface RackPositionSummary {
+  id: number;
+  room: string | null;
+  rack: string;
+  position_label: string;
+  occupied: boolean;
+}
+
+export interface CageLocationHistory {
+  id: number;
+  room: string | null;
+  rack: string;
+  position: string;
+  valid_from: string;
+  valid_to: string | null;
+  system_from: string;
+  system_to: string | null;
+  reason: string;
+}
