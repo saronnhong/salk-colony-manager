@@ -19,6 +19,7 @@ def move_cage(
     performed_by,
     moved_at=None,
     reason="",
+    reverses_operation=None,
 ):
     moved_at = moved_at or timezone.now()
 
@@ -107,6 +108,7 @@ def move_cage(
         operation_type="cage_move",
         performed_by=performed_by,
         reason=reason,
+        reverses_operation=reverses_operation,
         metadata={
             "cage_id": str(cage.id),
             "source_rack_position_id": current_assignment.rack_position.pk,

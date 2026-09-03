@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import Animal, Cage, RackPosition
+# from .models import Animal, Cage, RackPosition
 from .serializers import (
     AnimalMoveSerializer,
     AnimalSerializer,
@@ -16,9 +16,11 @@ from .serializers import (
 )
 
 from .services.animal_moves import move_animal
-from rest_framework import status
 
 from colony.models import (
+    Animal, 
+    Cage, 
+    RackPosition,
     Cage, 
     RackPosition, 
     CageRackPositionAssignment, 
@@ -32,11 +34,25 @@ from colony.serializers import (
     CageLocationHistorySerializer,
     AnimalLocationHistorySerializer,
     HusbandryEventSerializer,
+    HusbandryEventCorrectionSerializer,
 )
 from colony.services.cage_moves import move_cage
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import AllowAny
+
+from colony.services.husbandry_corrections import (
+    correct_husbandry_event,
+)
+
+from colony.models import AuditOperation
+from colony.serializers import AuditOperationSerializer
+from colony.services.undo_operations import (
+    undo_animal_move,
+    undo_cage_move,
+)
+from rest_framework.views import APIView
+from colony.serializers import CurrentUserSerializer
 
 
 class AnimalViewSet(ReadOnlyModelViewSet):
@@ -305,6 +321,51 @@ class HusbandryEventViewSet(viewsets.ModelViewSet):
         .order_by("-event_datetime", "-recorded_at")
     )
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="correct",
+    )
+    def correct(self, request, pk=None):
+        original_event = self.get_object()
+
+        serializer = HusbandryEventCorrectionSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        performed_by = request.user
+
+        if not performed_by.is_authenticated:
+            performed_by = (
+                get_user_model()
+                .objects
+                .filter(is_superuser=True)
+                .first()
+            )
+
+        try:
+            corrected_event = correct_husbandry_event(
+                original_event=original_event,
+                recorded_by=performed_by,
+                **serializer.validated_data,
+            )
+        except ValueError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = HusbandryEventSerializer(
+            corrected_event
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
     def get_queryset(self):
         queryset = super().get_queryset()
 
@@ -331,3 +392,107 @@ class HusbandryEventViewSet(viewsets.ModelViewSet):
         serializer.save(
             recorded_by=performed_by,
         )
+
+class AuditOperationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = AuditOperationSerializer
+    permission_classes = [AllowAny]
+
+    queryset = (
+        AuditOperation.objects
+        .select_related(
+            "performed_by",
+            "reverses_operation",
+        )
+        .order_by("-performed_at")
+    )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="undo",
+    )
+    def undo(self, request, pk=None):
+        operation = self.get_object()
+
+        performed_by = request.user
+
+        # Temporary development fallback.
+        # Remove once real authentication is wired.
+        if not performed_by.is_authenticated:
+            performed_by = (
+                get_user_model()
+                .objects
+                .filter(is_superuser=True)
+                .first()
+            )
+
+        if performed_by is None:
+            return Response(
+                {
+                    "detail":
+                    "No authenticated user is available "
+                    "to perform this undo."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reason = (
+            request.data.get("reason")
+            or f"Undo operation {operation.id}"
+        )
+
+        try:
+            if operation.operation_type == "animal_move":
+                undo_animal_move(
+                    operation=operation,
+                    performed_by=performed_by,
+                    reason=reason,
+                )
+
+            elif operation.operation_type == "cage_move":
+                undo_cage_move(
+                    operation=operation,
+                    performed_by=performed_by,
+                    reason=reason,
+                )
+
+            else:
+                return Response(
+                    {
+                        "detail":
+                        "This operation type does not "
+                        "support undo."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        except ValidationError as exc:
+            message = (
+                exc.messages[0]
+                if hasattr(exc, "messages")
+                else str(exc)
+            )
+
+            return Response(
+                {"detail": message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        operation.refresh_from_db()
+
+        serializer = self.get_serializer(operation)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = CurrentUserSerializer(
+            request.user
+        )
+
+        return Response(serializer.data)

@@ -24,4 +24,9 @@ urlpatterns = [
         "api/",
         include("colony.urls"),
     ),
+
+    path(
+        "accounts/",
+        include("allauth.urls"),
+    ),
 ]

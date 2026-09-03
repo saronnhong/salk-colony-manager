@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.db import models, transaction
 from django.db.models import Q
+from colony.services.death_events import record_death
 
 from .models import (
     Animal,
@@ -16,6 +17,7 @@ from .models import (
     HusbandryEvent,
     HusbandryEventWeight,
     HusbandryEventTreatment,
+    AuditOperation,
 )
 
 
@@ -560,6 +562,24 @@ class HusbandryEventSerializer(serializers.ModelSerializer):
         write_only=True,
     )
 
+    death_cause = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+    )
+
+    death_method = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+    )
+
+    correction_of = serializers.PrimaryKeyRelatedField(
+        read_only=True,
+    )
+
+    is_corrected = serializers.SerializerMethodField()                
+
     class Meta:
         model = HusbandryEvent
         fields = [
@@ -578,6 +598,10 @@ class HusbandryEventSerializer(serializers.ModelSerializer):
             "treatment_name",
             "dose",
             "route",
+            "death_cause",
+            "death_method",
+            "correction_of",
+            "is_corrected",
         ]
         read_only_fields = [
             "id",
@@ -585,6 +609,9 @@ class HusbandryEventSerializer(serializers.ModelSerializer):
             "recorded_by",
             "recorded_by_name",
         ]
+
+    def get_is_corrected(self, obj):
+        return obj.corrections.exists()
 
     def get_recorded_by_name(self, obj):
         if not obj.recorded_by:
@@ -606,6 +633,17 @@ class HusbandryEventSerializer(serializers.ModelSerializer):
             if not attrs.get("treatment_name"):
                 raise serializers.ValidationError({
                     "treatment_name": "Treatment name is required."
+                })
+
+        if event_type == HusbandryEvent.EventType.DEATH:
+            if not attrs.get("death_cause"):
+                raise serializers.ValidationError({
+                    "death_cause": "Cause is required for a death event."
+                })
+
+            if not attrs.get("death_method"):
+                raise serializers.ValidationError({
+                    "death_method": "Method is required for a death event."
                 })
 
         return attrs
@@ -632,17 +670,52 @@ class HusbandryEventSerializer(serializers.ModelSerializer):
             "",
         )
 
+        death_cause = validated_data.pop(
+            "death_cause",
+            "",
+        )
+
+        death_method = validated_data.pop(
+            "death_method",
+            "",
+        )
+
+        if (
+            validated_data.get("event_type")
+            == HusbandryEvent.EventType.DEATH
+        ):
+            animal = validated_data.get("animal")
+            recorded_by = validated_data.get("recorded_by")
+            event_datetime = validated_data.get("event_datetime")
+            notes = validated_data.get("notes", "")
+
+            return record_death(
+                animal=animal,
+                event_datetime=event_datetime,
+                cause=death_cause,
+                method=death_method,
+                confirmed_by=recorded_by,
+                recorded_by=recorded_by,
+                notes=notes,
+            )
+
         event = HusbandryEvent.objects.create(
             **validated_data
         )
 
-        if event.event_type == HusbandryEvent.EventType.WEIGHT:
+        if (
+            event.event_type
+            == HusbandryEvent.EventType.WEIGHT
+        ):
             HusbandryEventWeight.objects.create(
                 event=event,
                 weight_grams=weight_grams,
             )
 
-        elif event.event_type == HusbandryEvent.EventType.TREATMENT:
+        elif (
+            event.event_type
+            == HusbandryEvent.EventType.TREATMENT
+        ):
             HusbandryEventTreatment.objects.create(
                 event=event,
                 drug_name=treatment_name,
@@ -674,3 +747,132 @@ class HusbandryEventSerializer(serializers.ModelSerializer):
             data["treatment"] = None
 
         return data
+
+class HusbandryEventCorrectionSerializer(serializers.Serializer):
+    event_datetime = serializers.DateTimeField(
+        required=False,
+    )
+
+    notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+    weight_grams = serializers.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        required=False,
+    )
+
+    treatment_name = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+    dose = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+    route = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+class AuditOperationSerializer(serializers.ModelSerializer):
+    performed_by_name = serializers.SerializerMethodField()
+    is_reversed = serializers.BooleanField(read_only=True)
+    can_undo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditOperation
+        fields = [
+            "id",
+            "operation_type",
+            "performed_by",
+            "performed_by_name",
+            "performed_at",
+            "reason",
+            "metadata",
+            "reverses_operation",
+            "is_reversed",
+            "can_undo",
+        ]
+
+    def get_performed_by_name(self, obj):
+        user = obj.performed_by
+
+        full_name = user.get_full_name()
+
+        return full_name or user.username
+
+    def get_can_undo(self, obj):
+        if obj.is_reversed:
+            return False
+
+        if obj.reverses_operation_id is not None:
+            return False
+
+        metadata = obj.metadata
+
+        if obj.operation_type == "animal_move":
+            animal_id = metadata.get("animal_id")
+            destination_cage_id = metadata.get(
+                "destination_cage_id"
+            )
+
+            if not animal_id or not destination_cage_id:
+                return False
+
+            current_assignment = (
+                AnimalCageAssignment.objects
+                .filter(
+                    animal_id=animal_id,
+                    valid_to__isnull=True,
+                    system_to__isnull=True,
+                )
+                .first()
+            )
+
+            if current_assignment is None:
+                return False
+
+            return str(
+                current_assignment.cage.pk
+            ) == str(destination_cage_id)
+
+        if obj.operation_type == "cage_move":
+            cage_id = metadata.get("cage_id")
+            destination_position_id = metadata.get(
+                "destination_rack_position_id"
+            )
+
+            if not cage_id or not destination_position_id:
+                return False
+
+            current_assignment = (
+                CageRackPositionAssignment.objects
+                .filter(
+                    cage_id=cage_id,
+                    valid_to__isnull=True,
+                    system_to__isnull=True,
+                )
+                .select_related("rack_position")
+                .first()
+            )
+
+            if current_assignment is None:
+                return False
+
+            return str(
+                current_assignment.rack_position.pk
+            ) == str(destination_position_id)
+
+        return False
+
+class CurrentUserSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()

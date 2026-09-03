@@ -20,6 +20,7 @@ def move_animal(
     performed_by,
     moved_at=None,
     reason="",
+    reverses_operation=None,
 ):
     moved_at = moved_at or timezone.now()
 
@@ -76,6 +77,7 @@ def move_animal(
         operation_type="animal_move",
         performed_by=performed_by,
         reason=reason,
+        reverses_operation=reverses_operation,
         metadata={
             "animal_id": str(animal.pk),
             "source_cage_id": str(current_assignment.cage.pk),

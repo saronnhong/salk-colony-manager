@@ -741,6 +741,14 @@ class HusbandryEvent(models.Model):
     notes = models.TextField(blank=True)
     metadata = models.JSONField(default=dict, blank=True)
 
+    correction_of = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="corrections",
+    )
+    
     class Meta:
         db_table = "husbandry_event"
         indexes = [

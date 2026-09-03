@@ -1,12 +1,15 @@
 from rest_framework.routers import DefaultRouter
+from django.urls import include, path
 
 from .views import (
     AnimalViewSet, 
     CageViewSet, 
     RackPositionViewSet,
-    HusbandryEventViewSet
+    HusbandryEventViewSet,
+    AuditOperationViewSet,
     )
 
+from colony.views import CurrentUserView
 
 router = DefaultRouter()
 
@@ -34,4 +37,22 @@ router.register(
     basename="husbandry-event",
 )
 
-urlpatterns = router.urls
+router.register(
+    r"audit-operations",
+    AuditOperationViewSet,
+    basename="audit-operation",
+)
+
+# urlpatterns = router.urls
+urlpatterns = [
+    path(
+        "auth/me/",
+        CurrentUserView.as_view(),
+        name="current-user",
+    ),
+
+    path(
+        "",
+        include(router.urls),
+    ),
+]
