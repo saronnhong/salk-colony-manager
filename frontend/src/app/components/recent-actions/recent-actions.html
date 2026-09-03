@@ -1,0 +1,104 @@
+<section class="recent-actions">
+  <div class="section-header">
+    <div>
+      <h2>Recent actions</h2>
+      <p>
+        Recent animal and cage movements.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="loadOperations()"
+      [disabled]="loading()"
+    >
+      Refresh
+    </button>
+  </div>
+
+  @if (error()) {
+    <div
+      class="message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (success()) {
+    <div
+      class="message success-message"
+      role="status"
+    >
+      {{ success() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <p>Loading recent actions...</p>
+  } @else if (operations().length === 0) {
+    <p>No recent actions.</p>
+  } @else {
+    <div class="action-list">
+      @for (
+        operation of operations();
+        track operation.id
+      ) {
+        <article class="action-card">
+          <div class="action-main">
+            <div class="action-title-row">
+              <strong>
+                {{ actionLabel(operation) }}
+              </strong>
+
+              @if (operation.is_reversed) {
+                <span class="status">
+                  Undone
+                </span>
+              }
+            </div>
+
+            <div class="action-meta">
+              <span>
+                {{ operation.performed_by_name }}
+              </span>
+
+              <span aria-hidden="true">•</span>
+
+              <time
+                [attr.datetime]="operation.performed_at"
+              >
+                {{
+                  operation.performed_at
+                    | date:'MMM d, h:mm a'
+                }}
+              </time>
+            </div>
+
+            @if (operation.reason) {
+              <p class="reason">
+                {{ operation.reason }}
+              </p>
+            }
+          </div>
+
+          @if (operation.can_undo) {
+            <button
+              type="button"
+              class="undo-button"
+              (click)="undo(operation)"
+              [disabled]="undoingId() !== null"
+            >
+              @if (undoingId() === operation.id) {
+                Undoing...
+              } @else {
+                Undo
+              }
+            </button>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

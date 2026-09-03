@@ -169,11 +169,23 @@
 
         @if (eventFormVisible()) {
         <form class="move-form" [formGroup]="eventForm" (ngSubmit)="submitEvent()">
+            <h3>
+                @if (correctingEvent) {
+                Correct {{ getEventLabel(correctingEvent.event_type) }}
+                } @else {
+                Record husbandry event
+                }
+            </h3>
             <div class="form-field">
                 <label for="event-type">
                     Event type
                 </label>
 
+                @if (correctingEvent) {
+                <p class="readonly-value">
+                    {{ getEventLabel(correctingEvent.event_type) }}
+                </p>
+                } @else {
                 <select id="event-type" formControlName="event_type">
                     <option value="">
                         Select an event
@@ -188,6 +200,7 @@
                     </option>
                     }
                 </select>
+                }
             </div>
 
             @if (
@@ -234,6 +247,27 @@
             </div>
             }
 
+            @if (
+            eventForm.controls.event_type.value === 'death'
+            ) {
+            <div class="form-field">
+                <label for="death-cause">
+                    Cause
+                </label>
+
+                <textarea id="death-cause" formControlName="death_cause" rows="3"
+                    placeholder="Known or suspected cause"></textarea>
+            </div>
+
+            <div class="form-field">
+                <label for="death-method">
+                    Method
+                </label>
+
+                <input id="death-method" type="text" formControlName="death_method" placeholder="Example: euthanasia" />
+            </div>
+            }
+
             <div class="form-field">
                 <label for="event-datetime">
                     Event date and time
@@ -259,13 +293,15 @@
             }
 
             <div class="form-actions">
-                <button type="button" class="secondary-button" (click)="cancelEvent()" [disabled]="savingEvent()">
+                <button type="button" class="secondary-button" (click)="cancelEventForm()" [disabled]="savingEvent()">
                     Cancel
                 </button>
 
                 <button type="submit" class="primary-button" [disabled]="savingEvent()">
                     @if (savingEvent()) {
                     Saving...
+                    } @else if (correctingEventId()) {
+                    Save correction
                     } @else {
                     Record event
                     }
@@ -302,6 +338,12 @@
                     <strong>
                         {{ getEventLabel(event.event_type) }}
                     </strong>
+
+                    @if (event.correction_of) {
+                    <p class="event-meta">
+                        Correction of event #{{ event.correction_of }}
+                    </p>
+                    }
 
                     <time>
                         {{ event.event_datetime | date:'medium' }}
@@ -350,6 +392,14 @@
                     Recorded by
                     {{ event.recorded_by_name || 'Unknown user' }}
                 </p>
+
+                @if (canCorrectEvent(event)) {
+                <div class="event-actions">
+                    <button type="button" class="secondary-button" (click)="startCorrection(event)">
+                        Correct
+                    </button>
+                </div>
+                }
             </article>
             }
         </div>

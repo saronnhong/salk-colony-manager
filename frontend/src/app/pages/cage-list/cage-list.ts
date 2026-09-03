@@ -3,10 +3,11 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CageCard } from '../../components/cage-card/cage-card';
 import { CageSummary } from '../../models/cage.model';
 import { CageService } from '../../services/cage.service';
+import { RecentActions } from '../../components/recent-actions/recent-actions';
 
 @Component({
   selector: 'app-cage-list',
-  imports: [CageCard],
+  imports: [CageCard, RecentActions],
   templateUrl: './cage-list.html',
   styleUrl: './cage-list.scss',
 })

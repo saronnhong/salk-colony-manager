@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import {
   HusbandryEvent,
   HusbandryEventCreateRequest,
+  HusbandryEventCorrectionRequest
 } from '../models/husbandry-event.model';
 
 @Injectable({
@@ -32,4 +33,14 @@ export class HusbandryEventService {
       `${this.apiUrl}/?animal=${animalId}`
     );
   }
+
+  correctEvent(
+  eventId: number,
+  payload: HusbandryEventCorrectionRequest
+) {
+  return this.http.post<HusbandryEvent>(
+    `${this.apiUrl}/${eventId}/correct/`,
+    payload
+  );
+}
 }

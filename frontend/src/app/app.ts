@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,12 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App { }
+export class App implements OnInit {
+    constructor(
+    public authService: AuthService,
+  ) {}
+
+  ngOnInit(): void {
+    this.authService.loadCurrentUser();
+  }
+ }

@@ -29,6 +29,8 @@ export interface HusbandryEvent {
   metadata: Record<string, unknown>;
   weight_grams: number | null;
   treatment: HusbandryTreatmentDetail | null;
+  correction_of: number | null;
+  is_corrected: boolean;
 }
 
 export interface HusbandryEventCreateRequest {
@@ -39,9 +41,18 @@ export interface HusbandryEventCreateRequest {
   event_datetime: string;
   notes?: string;
   metadata?: Record<string, unknown>;
-
   weight_grams?: number;
+  treatment_name?: string;
+  dose?: string;
+  route?: string;
+  death_cause?: string;
+  death_method?: string;
+}
 
+export interface HusbandryEventCorrectionRequest {
+  event_datetime?: string;
+  notes?: string;
+  weight_grams?: number;
   treatment_name?: string;
   dose?: string;
   route?: string;

@@ -89,21 +89,22 @@ export class AnimalDetail implements OnInit {
       Validators.required,
     ],
     notes: [''],
-
     weight_grams: [
       null as number | null,
     ],
-
     treatment_name: [''],
-
     dose: [''],
-
     route: [''],
+    death_cause: [''],
+    death_method: [''],
   });
 
   eventFilter = signal<
     'today' | 'yesterday' | 'all'
   >('today');
+
+  correctingEventId = signal<number | null>(null);
+  correctingEvent: HusbandryEvent | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -262,6 +263,9 @@ export class AnimalDetail implements OnInit {
   }
 
   showEventForm(): void {
+    this.correctingEventId.set(null);
+    this.correctingEvent = null;
+
     this.eventError.set(null);
     this.eventSuccess.set(null);
 
@@ -273,14 +277,11 @@ export class AnimalDetail implements OnInit {
       treatment_name: '',
       dose: '',
       route: '',
+      death_cause: '',
+      death_method: '',
     });
 
     this.eventFormVisible.set(true);
-  }
-
-  cancelEvent(): void {
-    this.eventFormVisible.set(false);
-    this.eventError.set(null);
   }
 
   submitEvent(): void {
@@ -311,14 +312,13 @@ export class AnimalDetail implements OnInit {
 
     const formValue = this.eventForm.getRawValue();
 
-    this.husbandryEventService.createEvent({
-      event_type: eventType,
-      animal: animal.id,
+    const eventPayload = {
       event_datetime: new Date(
         eventDateTime
       ).toISOString(),
+
       notes: formValue.notes || '',
-      metadata: {},
+
       ...(eventType === 'weight' &&
         formValue.weight_grams !== null
         ? {
@@ -337,13 +337,51 @@ export class AnimalDetail implements OnInit {
             formValue.route || '',
         }
         : {}),
-    }).subscribe({
+    };
+
+    const correctingId =
+      this.correctingEventId();
+
+    const request$ = correctingId
+      ? this.husbandryEventService.correctEvent(
+        correctingId,
+        eventPayload
+      )
+      : this.husbandryEventService.createEvent({
+        event_type: eventType,
+        animal: animal.id,
+        metadata: {},
+
+        ...eventPayload,
+
+        ...(eventType === 'death'
+          ? {
+            death_cause:
+              formValue.death_cause || '',
+            death_method:
+              formValue.death_method || '',
+          }
+          : {}),
+      });
+
+    request$.subscribe({
       next: event => {
+        const action =
+          correctingId
+            ? 'corrected'
+            : 'recorded';
+
         this.eventSuccess.set(
-          `${this.getEventLabel(event.event_type)} recorded.`
+          `${this.getEventLabel(
+            event.event_type
+          )} ${action}.`
         );
 
         this.eventFormVisible.set(false);
+
+        this.correctingEventId.set(null);
+        this.correctingEvent = null;
+
         this.savingEvent.set(false);
 
         this.loadHusbandryEvents(animal.id);
@@ -351,7 +389,9 @@ export class AnimalDetail implements OnInit {
 
       error: error => {
         console.error(
-          'Create husbandry event error:',
+          correctingId
+            ? 'Correct husbandry event error:'
+            : 'Create husbandry event error:',
           error
         );
 
@@ -361,7 +401,10 @@ export class AnimalDetail implements OnInit {
           Array.isArray(detail)
             ? detail.join(' ')
             : detail ||
-            `Unable to record event. Server returned ${error.status}.`
+            `Unable to ${correctingId
+              ? 'correct'
+              : 'record'
+            } event. Server returned ${error.status}.`
         );
 
         this.savingEvent.set(false);
@@ -430,5 +473,74 @@ export class AnimalDetail implements OnInit {
         targetDate.getDate()
       );
     });
+  }
+
+  canCorrectEvent(event: HusbandryEvent): boolean {
+    return (
+      !event.is_corrected &&
+      (
+        event.event_type === 'health_check' ||
+        event.event_type === 'weight' ||
+        event.event_type === 'treatment'
+      )
+    );
+  }
+
+  startCorrection(event: HusbandryEvent): void {
+    this.correctingEventId.set(event.id);
+    this.correctingEvent = event;
+
+    this.eventError.set(null);
+    this.eventSuccess.set(null);
+
+    this.eventForm.reset({
+      event_type: event.event_type,
+
+      event_datetime: this.toLocalDateTimeInput(
+        event.event_datetime
+      ),
+
+      notes: event.notes ?? '',
+
+      weight_grams:
+        event.weight_grams != null
+          ? Number(event.weight_grams)
+          : null,
+
+      treatment_name:
+        event.treatment?.drug_name ?? '',
+
+      dose:
+        event.treatment?.dose ?? '',
+
+      route:
+        event.treatment?.route ?? '',
+
+      death_cause: '',
+      death_method: '',
+    });
+
+    this.eventFormVisible.set(true);
+  }
+
+  private toLocalDateTimeInput(value: string): string {
+    const date = new Date(value);
+
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(
+      date.getTime() - offset * 60_000
+    );
+
+    return localDate
+      .toISOString()
+      .slice(0, 16);
+  }
+
+  cancelEventForm(): void {
+    this.correctingEventId.set(null);
+    this.correctingEvent = null;
+    this.eventFormVisible.set(false);
+    this.eventError.set(null);
+    this.eventSuccess.set(null);
   }
 }

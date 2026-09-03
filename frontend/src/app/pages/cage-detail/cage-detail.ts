@@ -10,6 +10,8 @@ import {
 import { CageDetailModel, RackPositionSummary, CageLocationHistory } from '../../models/cage.model';
 import { CageService } from '../../services/cage.service';
 import { DatePipe } from '@angular/common';
+// import { RecentActions } from '../../components/recent-actions/recent-actions';
+
 
 @Component({
   selector: 'app-cage-detail',

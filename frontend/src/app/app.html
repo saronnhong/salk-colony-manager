@@ -1,1 +1,26 @@
-<router-outlet />
+<header class="app-header">
+  <div class="app-title">
+    Animal Colony Manager
+  </div>
+
+  <div class="auth-status">
+    @if (authService.loading()) {
+      <span>Checking login...</span>
+    } @else if (authService.currentUser(); as user) {
+      <span>
+        Signed in as {{ user.username }}
+      </span>
+    } @else {
+      <button
+        type="button"
+        (click)="authService.login()"
+      >
+        Sign in with GitHub
+      </button>
+    }
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
