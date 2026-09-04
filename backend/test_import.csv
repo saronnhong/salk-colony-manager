@@ -1,0 +1,3 @@
+local_id,sex,date_of_birth,species,strain,cage_code
+UNDO-001,M,2026-08-01,Mus musculus,C57BL/6J,CAGE-001
+UNDO-002,F,2026-08-02,Mus musculus,BALB/cJ,CAGE-002

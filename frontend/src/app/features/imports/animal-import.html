@@ -1,0 +1,238 @@
+<section class="import-page">
+    <header class="page-header">
+        <div>
+            <h1>Import animals</h1>
+
+            <p>
+                Upload a CSV to preview and validate
+                animal records before importing them.
+            </p>
+        </div>
+    </header>
+
+    <section class="upload-card" aria-labelledby="upload-title">
+        <div class="upload-heading">
+            <h2 id="upload-title">
+                Upload CSV
+            </h2>
+
+            <p>
+                No animal records are created during
+                preview.
+            </p>
+        </div>
+
+        <div class="upload-controls">
+            <label class="file-label" for="animal-import-file">
+                Choose CSV
+            </label>
+
+            <input id="animal-import-file" class="file-input" type="file" accept=".csv,text/csv"
+                (change)="onFileSelected($event)" />
+
+            @if (selectedFile(); as file) {
+            <span class="selected-file">
+                {{ file.name }}
+            </span>
+            }
+
+            <button type="button" class="preview-button" [disabled]="!selectedFile() || loading()"
+                (click)="previewImport()">
+                @if (loading()) {
+                Validating...
+                } @else {
+                Preview import
+                }
+            </button>
+        </div>
+    </section>
+
+    @if (error()) {
+    <div class="error-message" role="alert">
+        {{ error() }}
+    </div>
+    }
+
+    @if (preview(); as batch) {
+    <section class="preview-card" aria-labelledby="preview-title">
+        <div class="preview-header">
+            <div>
+                <h2 id="preview-title">
+                    Import preview
+                </h2>
+
+                <p>
+                    {{ batch.filename }}
+                </p>
+            </div>
+
+            <div class="preview-summary">
+                <span class="summary-item">
+                    <strong>
+                        {{ validRowCount() }}
+                    </strong>
+                    valid
+                </span>
+
+                <span class="summary-item">
+                    <strong>
+                        {{ invalidRowCount() }}
+                    </strong>
+                    invalid
+                </span>
+            </div>
+        </div>
+
+        <div class="commit-section">
+            <div>
+                <strong>
+                    {{ validRowCount() }} animals ready to import
+                </strong>
+
+                @if (invalidRowCount() > 0) {
+                <p>
+                    Invalid rows will be skipped and will not
+                    create records.
+                </p>
+                }
+            </div>
+
+            <button type="button" class="commit-button" [disabled]="
+      validRowCount() === 0 ||
+      committing() ||
+      batch.status === 'committed' ||
+      batch.status === 'committed_with_errors'
+    " (click)="commitImport()">
+                @if (committing()) {
+                Importing...
+                } @else if (
+                batch.status === 'committed' ||
+                batch.status === 'committed_with_errors'
+                ) {
+                Import complete
+                } @else {
+                Import valid rows
+                }
+            </button>
+        </div>
+
+        @if (commitMessage()) {
+        <div class="success-message" role="status">
+            {{ commitMessage() }}
+        </div>
+        }
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            Row
+                        </th>
+
+                        <th scope="col">
+                            Local ID
+                        </th>
+
+                        <th scope="col">
+                            Sex
+                        </th>
+
+                        <th scope="col">
+                            DOB
+                        </th>
+
+                        <th scope="col">
+                            Species
+                        </th>
+
+                        <th scope="col">
+                            Strain
+                        </th>
+
+                        <th scope="col">
+                            Cage
+                        </th>
+
+                        <th scope="col">
+                            Status
+                        </th>
+
+                        <th scope="col">
+                            Validation
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @for (
+                    row of batch.rows;
+                    track row.id
+                    ) {
+                    <tr>
+                        <td>
+                            {{ row.row_number }}
+                        </td>
+
+                        <td>
+                            {{ row.raw_data.local_id }}
+                        </td>
+
+                        <td>
+                            {{ row.raw_data.sex }}
+                        </td>
+
+                        <td>
+                            {{ row.raw_data.date_of_birth }}
+                        </td>
+
+                        <td>
+                            {{ row.raw_data.species }}
+                        </td>
+
+                        <td>
+                            {{ row.raw_data.strain }}
+                        </td>
+
+                        <td>
+                            {{ row.raw_data.cage_code }}
+                        </td>
+
+                        <td>
+                            <span class="status-badge" [class.status-valid]="
+                      row.parse_status === 'valid'
+                    " [class.status-invalid]="
+                      row.parse_status === 'invalid'
+                    ">
+                                {{ row.parse_status }}
+                            </span>
+                        </td>
+
+                        <td>
+                            @if (
+                            rowErrors(row).length > 0
+                            ) {
+                            <ul class="validation-list">
+                                @for (
+                                message of rowErrors(row);
+                                track message
+                                ) {
+                                <li>
+                                    {{ message }}
+                                </li>
+                                }
+                            </ul>
+                            } @else {
+                            <span class="no-errors">
+                                Ready
+                            </span>
+                            }
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+    }
+</section>

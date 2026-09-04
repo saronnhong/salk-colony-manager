@@ -9,7 +9,7 @@ import { AuditOperation } from '../models/audit-operation.model';
 })
 export class AuditOperationService {
   private readonly apiUrl =
-    'http://127.0.0.1:8000/api/audit-operations';
+    'http://localhost:8000/api/audit-operations';
 
   constructor(private http: HttpClient) {}
 

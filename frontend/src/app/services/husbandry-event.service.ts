@@ -13,7 +13,7 @@ import {
 })
 export class HusbandryEventService {
   private readonly apiUrl =
-    'http://127.0.0.1:8000/api/husbandry-events';
+    'http://localhost:8000/api/husbandry-events';
 
   constructor(private http: HttpClient) {}
 

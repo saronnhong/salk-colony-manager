@@ -13,7 +13,7 @@ import {
 })
 export class AnimalService {
     private readonly apiUrl =
-        'http://127.0.0.1:8000/api/animals';
+        'http://localhost:8000/api/animals';
 
     constructor(private http: HttpClient) { }
 

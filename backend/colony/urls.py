@@ -7,6 +7,9 @@ from .views import (
     RackPositionViewSet,
     HusbandryEventViewSet,
     AuditOperationViewSet,
+    AnimalImportPreviewView,
+    AnimalImportCommitView,
+    AnimalImportUndoView
     )
 
 from colony.views import CurrentUserView
@@ -54,5 +57,20 @@ urlpatterns = [
     path(
         "",
         include(router.urls),
+    ),
+    path(
+        "imports/animals/preview/",
+        AnimalImportPreviewView.as_view(),
+        name="animal-import-preview",
+    ),
+    path(
+        "imports/animals/<int:batch_id>/commit/",
+        AnimalImportCommitView.as_view(),
+        name="animal-import-commit",
+    ),
+    path(
+        "imports/animals/<int:batch_id>/undo/",
+        AnimalImportUndoView.as_view(),
+        name="animal-import-undo",
     ),
 ]

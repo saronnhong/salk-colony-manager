@@ -1,0 +1,386 @@
+.import-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 1.75rem;
+  font-weight: 650;
+}
+
+.page-header p {
+  max-width: 650px;
+
+  margin: 0.5rem 0 0;
+
+  color: #6b7280;
+
+  line-height: 1.5;
+}
+
+.upload-card,
+.preview-card {
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.upload-card {
+  padding: 1.25rem;
+}
+
+.upload-heading h2,
+.preview-header h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 1.1rem;
+}
+
+.upload-heading p,
+.preview-header p {
+  margin: 0.3rem 0 0;
+
+  color: #6b7280;
+
+  font-size: 0.85rem;
+}
+
+.upload-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 0.75rem;
+
+  margin-top: 1rem;
+}
+
+.file-input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  overflow: hidden;
+
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+
+  white-space: nowrap;
+}
+
+.file-label,
+.preview-button {
+  min-height: 44px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0.65rem 1rem;
+
+  border-radius: 8px;
+
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.file-label {
+  background: #ffffff;
+
+  border: 1px solid #d1d5db;
+
+  color: #374151;
+}
+
+.file-label:hover {
+  background: #f9fafb;
+}
+
+.preview-button {
+  background: #1f2937;
+
+  border: 1px solid #1f2937;
+
+  color: #ffffff;
+}
+
+.preview-button:hover:not(:disabled) {
+  background: #111827;
+}
+
+.preview-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
+
+.file-label:focus-visible,
+.preview-button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.selected-file {
+  color: #4b5563;
+
+  font-size: 0.85rem;
+
+  word-break: break-all;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+
+  color: #991b1b;
+
+  font-size: 0.9rem;
+}
+
+.preview-card {
+  margin-top: 1.5rem;
+
+  overflow: hidden;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  padding: 1.25rem;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.preview-summary {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.summary-item {
+  padding: 0.4rem 0.6rem;
+
+  background: #f3f4f6;
+
+  border-radius: 7px;
+
+  color: #4b5563;
+
+  font-size: 0.8rem;
+}
+
+.summary-item strong {
+  color: #111827;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  padding: 0.8rem;
+
+  border-bottom: 1px solid #f1f5f9;
+
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #f9fafb;
+
+  color: #4b5563;
+
+  font-size: 0.75rem;
+  font-weight: 650;
+
+  white-space: nowrap;
+}
+
+td {
+  color: #374151;
+}
+
+.status-badge {
+  display: inline-block;
+
+  padding: 0.25rem 0.5rem;
+
+  border-radius: 999px;
+
+  background: #f3f4f6;
+
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  text-transform: capitalize;
+}
+
+.status-valid {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.status-invalid {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.validation-list {
+  min-width: 180px;
+
+  margin: 0;
+  padding-left: 1rem;
+
+  color: #991b1b;
+
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.no-errors {
+  color: #047857;
+
+  font-size: 0.8rem;
+}
+
+.commit-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  padding: 1rem 1.25rem;
+
+  background: #f9fafb;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.commit-section strong {
+  color: #111827;
+}
+
+.commit-section p {
+  margin: 0.25rem 0 0;
+
+  color: #6b7280;
+
+  font-size: 0.8rem;
+}
+
+.commit-button {
+  min-height: 44px;
+
+  padding: 0.65rem 1rem;
+
+  background: #1f2937;
+
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+.commit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commit-button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.success-message {
+  margin: 1rem 1.25rem;
+
+  padding: 0.75rem 1rem;
+
+  background: #ecfdf5;
+
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+
+  color: #065f46;
+
+  font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  .commit-section {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .commit-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .import-page {
+    padding: 1rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .upload-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .file-label,
+  .preview-button {
+    width: 100%;
+  }
+
+  .preview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

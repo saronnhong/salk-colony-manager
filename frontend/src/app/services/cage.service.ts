@@ -14,7 +14,7 @@ import {
   providedIn: 'root'
 })
 export class CageService {
-  private readonly apiUrl = 'http://127.0.0.1:8000/api/cages';
+  private readonly apiUrl = 'http://localhost:8000/api/cages';
 
   constructor(private http: HttpClient) { }
 
@@ -42,7 +42,7 @@ export class CageService {
 
   getRackPositions(): Observable<RackPositionSummary[]> {
     return this.http.get<RackPositionSummary[]>(
-      'http://127.0.0.1:8000/api/rack-positions/'
+      'http://localhost:8000/api/rack-positions/'
     );
   }
 

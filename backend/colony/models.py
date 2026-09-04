@@ -917,6 +917,7 @@ class ImportRow(models.Model):
         INVALID = "invalid", "Invalid"
         SKIPPED = "skipped", "Skipped"
         COMMITTED = "committed", "Committed"
+        UNDONE = "undone", "Undone"
 
     batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="rows")
     row_number = models.PositiveIntegerField()

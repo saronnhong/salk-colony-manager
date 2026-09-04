@@ -18,6 +18,8 @@ from .models import (
     HusbandryEventWeight,
     HusbandryEventTreatment,
     AuditOperation,
+    ImportBatch,
+    ImportRow,
 )
 
 
@@ -876,3 +878,34 @@ class CurrentUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     first_name = serializers.CharField()
     last_name = serializers.CharField()
+
+class ImportRowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportRow
+        fields = [
+            "id",
+            "row_number",
+            "raw_data",
+            "parse_status",
+            "validation_errors",
+        ]
+
+
+class ImportBatchSerializer(serializers.ModelSerializer):
+    rows = ImportRowSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = ImportBatch
+        fields = [
+            "id",
+            "filename",
+            "uploaded_at",
+            "status",
+            "rows",
+        ]
+
+class ImportUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()

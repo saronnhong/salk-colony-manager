@@ -27,6 +27,15 @@ export const routes: Routes = [
     component: AnimalDetail
   },
   {
+    path: 'imports/animals',
+    loadComponent: () =>
+      import(
+        './features/imports/animal-import'
+      ).then(
+        (m) => m.AnimalImportComponent,
+      ),
+  },
+  {
     path: '**',
     redirectTo: 'cages'
   }

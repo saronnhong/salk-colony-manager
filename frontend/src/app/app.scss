@@ -1,0 +1,346 @@
+.auth-page {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1.5rem;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #f1f5f9 100%
+    );
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+
+  padding: 2rem;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  box-shadow:
+    0 10px 30px
+    rgba(15, 23, 42, 0.06);
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  margin-bottom: 2rem;
+}
+
+.brand-mark {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #1f2937;
+  border-radius: 10px;
+
+  color: #ffffff;
+
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.brand-name {
+  color: #111827;
+
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.brand-subtitle {
+  margin-top: 0.1rem;
+
+  color: #6b7280;
+
+  font-size: 0.8rem;
+}
+
+.auth-content {
+  margin-bottom: 1.5rem;
+}
+
+.auth-content h1 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 1.75rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.auth-content p {
+  margin: 0.65rem 0 0;
+
+  color: #6b7280;
+
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.github-button {
+  width: 100%;
+  min-height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+
+  padding: 0.75rem 1rem;
+
+  background: #24292f;
+  border: 1px solid #24292f;
+  border-radius: 8px;
+
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.github-button:hover {
+  background: #1b1f23;
+}
+
+.github-button:active {
+  transform: translateY(1px);
+}
+
+.github-button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.github-icon {
+  width: 20px;
+  height: 20px;
+
+  flex-shrink: 0;
+}
+
+.auth-note {
+  margin: 1rem 0 0;
+
+  color: #9ca3af;
+
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.auth-loading {
+  margin: 0;
+
+  color: #6b7280;
+
+  text-align: center;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.app-header-inner {
+  min-height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  padding: 0.65rem 1.25rem;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+
+  min-width: 0;
+}
+
+.header-brand-mark {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #1f2937;
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.header-brand-text {
+  min-width: 0;
+}
+
+.header-brand-name {
+  color: #111827;
+
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.header-brand-subtitle {
+  margin-top: 0.1rem;
+
+  color: #6b7280;
+
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+
+  gap: 0.65rem;
+
+  padding: 0.35rem 0.55rem;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #f9fafb;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #e5e7eb;
+
+  color: #374151;
+
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.user-label {
+  color: #9ca3af;
+
+  font-size: 0.68rem;
+  line-height: 1.1;
+}
+
+.user-name {
+  max-width: 160px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #111827;
+
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.app-content {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .app-header-inner {
+    min-height: 58px;
+
+    padding: 0.55rem 0.8rem;
+  }
+
+  .header-brand-subtitle {
+    display: none;
+  }
+
+  .user-label {
+    display: none;
+  }
+
+  .user-menu {
+    padding: 0.3rem 0.45rem;
+  }
+
+  .user-name {
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    align-items: flex-start;
+
+    padding: 1rem;
+    padding-top: 12vh;
+  }
+
+  .auth-card {
+    padding: 1.5rem;
+  }
+
+  .auth-content h1 {
+    font-size: 1.5rem;
+  }
+}
