@@ -20,8 +20,11 @@ from .models import (
     AuditOperation,
     ImportBatch,
     ImportRow,
+    CageResponsibility,
 )
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class AnimalSummarySerializer(serializers.ModelSerializer):
     identifier = serializers.SerializerMethodField()
@@ -909,3 +912,122 @@ class ImportBatchSerializer(serializers.ModelSerializer):
 
 class ImportUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
+
+# class CageResponsibilityAssignmentSerializer(
+#     serializers.Serializer
+# ):
+#     user_id = serializers.IntegerField()
+
+#     responsibility_type = serializers.ChoiceField(
+#         choices=CageResponsibility.ResponsibilityType.choices
+#     )
+
+#     valid_from = serializers.DateTimeField(
+#         required=False
+#     )
+
+#     valid_to = serializers.DateTimeField(
+#         required=False,
+#         allow_null=True,
+#     )
+
+#     notes = serializers.CharField(
+#         required=False,
+#         allow_blank=True,
+#     )
+
+#     def validate_user_id(self, value):
+#         if not User.objects.filter(
+#             id=value
+#         ).exists():
+#             raise serializers.ValidationError(
+#                 "User not found."
+#             )
+
+#         return value
+
+#     def validate(self, attrs):
+#         valid_from = attrs.get("valid_from")
+#         valid_to = attrs.get("valid_to")
+
+#         if (
+#             valid_from is not None
+#             and valid_to is not None
+#             and valid_to <= valid_from
+#         ):
+#             raise serializers.ValidationError(
+#                 {
+#                     "valid_to":
+#                         "End time must be after start time."
+#                 }
+#             )
+
+#         return attrs
+
+class ColonyUserSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "name",
+        ]
+
+    def get_name(self, obj):
+        return (
+            obj.get_full_name()
+            or obj.get_username()
+        )
+
+class CageResponsibilityAssignmentSerializer(
+    serializers.Serializer
+):
+    user_id = serializers.IntegerField()
+
+    responsibility_type = serializers.ChoiceField(
+        choices=CageResponsibility.ResponsibilityType.choices
+    )
+
+    valid_from = serializers.DateTimeField(
+        required=False
+    )
+
+    valid_to = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+
+    notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+    def validate_user_id(self, value):
+        if not User.objects.filter(
+            id=value
+        ).exists():
+            raise serializers.ValidationError(
+                "User not found."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        valid_from = attrs.get("valid_from")
+        valid_to = attrs.get("valid_to")
+
+        if (
+            valid_from is not None
+            and valid_to is not None
+            and valid_to <= valid_from
+        ):
+            raise serializers.ValidationError(
+                {
+                    "valid_to":
+                        "End time must be after start time."
+                }
+            )
+
+        return attrs

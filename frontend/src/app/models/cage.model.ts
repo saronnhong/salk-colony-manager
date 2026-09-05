@@ -89,3 +89,17 @@ export interface CageLocationHistory {
   system_to: string | null;
   reason: string;
 }
+
+export interface CageResponsibilityRequest {
+  user_id: number;
+  responsibility_type: 'primary' | 'coverage';
+  valid_from?: string;
+  valid_to?: string | null;
+  notes?: string;
+}
+
+export interface ColonyUser {
+  id: number;
+  username: string;
+  name: string;
+}

@@ -15,6 +15,8 @@ from .serializers import (
     RackPositionSummarySerializer,
     ImportBatchSerializer,
     ImportUploadSerializer,
+    ColonyUserSerializer,
+    CageResponsibilityAssignmentSerializer
 )
 from colony.services.import_preview import (
     preview_animal_import,
@@ -43,6 +45,7 @@ from colony.serializers import (
     HusbandryEventCorrectionSerializer,
 )
 from colony.services.cage_moves import move_cage
+from colony.services.cage_responsibility import assign_cage_responsibility
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status
 
@@ -69,6 +72,10 @@ from colony.services.import_commit import commit_animal_import
 from colony.services.import_undo import (
     undo_animal_import,
 )
+from rest_framework.generics import ListAPIView
+
+
+User = get_user_model()
 
 class AnimalViewSet(ReadOnlyModelViewSet):
     serializer_class = AnimalSerializer
@@ -282,6 +289,95 @@ class CageViewSet(ReadOnlyModelViewSet):
         )
 
         return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="responsibility",
+        permission_classes=[CanManageColony],
+    )
+    def assign_responsibility(
+        self,
+        request,
+        pk=None,
+    ):
+        cage = self.get_object()
+
+        serializer = (
+            CageResponsibilityAssignmentSerializer(
+                data=request.data
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        data = serializer.validated_data
+
+        user = User.objects.get(
+            id=data["user_id"]
+        )
+
+        try:
+            responsibility = (
+                assign_cage_responsibility(
+                    cage=cage,
+                    user=user,
+                    responsibility_type=(
+                        data["responsibility_type"]
+                    ),
+                    assigned_by=request.user,
+                    valid_from=data.get(
+                        "valid_from"
+                    ),
+                    valid_to=data.get(
+                        "valid_to"
+                    ),
+                    notes=data.get(
+                        "notes",
+                        "",
+                    ),
+                )
+            )
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "id":
+                    responsibility.id,
+
+                "responsibility_type":
+                    responsibility.responsibility_type,
+
+                "user": {
+                    "id":
+                        responsibility.user.id,
+
+                    "name":
+                        (
+                            responsibility.user.get_full_name()
+                            or responsibility.user.get_username()
+                        ),
+                },
+
+                "valid_from":
+                    responsibility.valid_from,
+
+                "valid_to":
+                    responsibility.valid_to,
+
+                "notes":
+                    responsibility.notes,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 class RackPositionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = RackPositionSummarySerializer
@@ -616,3 +712,18 @@ class AnimalImportUndoView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+class ColonyUserListView(ListAPIView):
+    serializer_class = ColonyUserSerializer
+
+    def get_queryset(self):
+        return (
+            User.objects
+            .filter(is_active=True)
+            .order_by(
+                "first_name",
+                "last_name",
+                "username",
+            )
+        )
+

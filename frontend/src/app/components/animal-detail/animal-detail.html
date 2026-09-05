@@ -82,7 +82,7 @@
         <form class="move-form" [formGroup]="moveForm" (ngSubmit)="submitMove()">
             <div class="form-field">
                 <label for="destination-cage">
-                    Destination cage
+                    Destination cage <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 <select id="destination-cage" formControlName="destination_cage_id">
@@ -178,7 +178,7 @@
             </h3>
             <div class="form-field">
                 <label for="event-type">
-                    Event type
+                    Event type <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 @if (correctingEvent) {
@@ -208,7 +208,7 @@
             ) {
             <div class="form-field">
                 <label for="weight-grams">
-                    Weight (g)
+                    Weight (g) <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 <input id="weight-grams" type="number" min="0" step="0.01" formControlName="weight_grams"
@@ -221,7 +221,7 @@
             ) {
             <div class="form-field">
                 <label for="treatment-name">
-                    Treatment
+                    Treatment <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 <input id="treatment-name" type="text" formControlName="treatment_name"
@@ -252,7 +252,7 @@
             ) {
             <div class="form-field">
                 <label for="death-cause">
-                    Cause
+                    Cause <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 <textarea id="death-cause" formControlName="death_cause" rows="3"
@@ -261,7 +261,7 @@
 
             <div class="form-field">
                 <label for="death-method">
-                    Method
+                    Method <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 <input id="death-method" type="text" formControlName="death_method" placeholder="Example: euthanasia" />
@@ -270,7 +270,7 @@
 
             <div class="form-field">
                 <label for="event-datetime">
-                    Event date and time
+                    Event date and time <span class="required" aria-hidden="true">*</span>
                 </label>
 
                 <input id="event-datetime" type="datetime-local" formControlName="event_datetime" />

@@ -4,6 +4,10 @@ import { CageCard } from '../../components/cage-card/cage-card';
 import { CageSummary } from '../../models/cage.model';
 import { CageService } from '../../services/cage.service';
 import { RecentActions } from '../../components/recent-actions/recent-actions';
+import {
+  ExportService,
+} from '../../services/export.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-cage-list',
@@ -17,7 +21,9 @@ export class CageList implements OnInit {
   error = signal('');
 
   constructor(
-    private cageService: CageService
+    private cageService: CageService,
+    private exportService: ExportService,
+    private router: Router,
   ) { }
 
   ngOnInit(): void {
@@ -44,4 +50,14 @@ export class CageList implements OnInit {
       }
     });
   }
+
+  downloadCensus(): void {
+    this.exportService.downloadAnimalCensus();
+  }
+
+  goToAnimalImport(): void {
+  this.router.navigate([
+    '/imports/animals',
+  ]);
+}
 }

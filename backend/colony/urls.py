@@ -9,10 +9,14 @@ from .views import (
     AuditOperationViewSet,
     AnimalImportPreviewView,
     AnimalImportCommitView,
-    AnimalImportUndoView
+    AnimalImportUndoView,
+    ColonyUserListView,
     )
 
 from colony.views import CurrentUserView
+from colony.export_views import (
+    AnimalCensusCsvExportView,
+)
 
 router = DefaultRouter()
 
@@ -72,5 +76,15 @@ urlpatterns = [
         "imports/animals/<int:batch_id>/undo/",
         AnimalImportUndoView.as_view(),
         name="animal-import-undo",
+    ),
+    path(
+        "exports/animal-census.csv",
+        AnimalCensusCsvExportView.as_view(),
+        name="animal-census-export",
+    ),
+    path(
+        "users/",
+        ColonyUserListView.as_view(),
+        name="colony-user-list",
     ),
 ]

@@ -1,76 +1,67 @@
 @if (authService.loading()) {
-  <main class="auth-page">
-    <section
-      class="auth-card"
-      aria-live="polite"
-    >
-      <div class="auth-brand">
-        <div
-          class="brand-mark"
-          aria-hidden="true"
-        >
-          AC
+<main class="auth-page">
+  <section class="auth-card" aria-live="polite">
+    <div class="auth-brand">
+      <button type="button" class="header-brand-mark" aria-label="Go to home page" (click)="goHome()">
+        AC
+      </button>
+
+      <div>
+        <div class="brand-name">
+          Colony Manager
         </div>
 
-        <div>
-          <div class="brand-name">
+        <div class="brand-subtitle">
+          Animal Research Colony
+        </div>
+      </div>
+    </div>
+
+    <p class="auth-loading">
+      Checking sign in...
+    </p>
+  </section>
+</main>
+} @else if (authService.currentUser(); as user) {
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-header-brand">
+        <button type="button" class="header-brand-mark" aria-label="Go to home page" (click)="goHome()">
+          AC
+        </button>
+
+        <div class="header-brand-text">
+          <div class="header-brand-name">
             Colony Manager
           </div>
 
-          <div class="brand-subtitle">
+          <div class="header-brand-subtitle">
             Animal Research Colony
           </div>
         </div>
       </div>
 
-      <p class="auth-loading">
-        Checking sign in...
-      </p>
-    </section>
-  </main>
-} @else if (authService.currentUser(); as user) {
-  <div class="app-shell">
-    <header class="app-header">
-      <div class="app-header-inner">
-        <div class="app-header-brand">
-          <div
-            class="header-brand-mark"
-            aria-hidden="true"
-          >
-            AC
-          </div>
-
-          <div class="header-brand-text">
-            <div class="header-brand-name">
-              Colony Manager
-            </div>
-
-            <div class="header-brand-subtitle">
-              Animal Research Colony
-            </div>
-          </div>
+      <div class="user-menu">
+        <div class="user-avatar" aria-hidden="true">
+          {{ user.username.charAt(0).toUpperCase() }}
         </div>
 
-        <div class="user-menu">
-          <div class="user-avatar" aria-hidden="true">
-            {{ user.username.charAt(0).toUpperCase() }}
-          </div>
+        <div class="user-details">
+          <span class="user-label">
+            Signed in as
+          </span>
 
-          <div class="user-details">
-            <span class="user-label">
-              Signed in as
-            </span>
-
-            <span class="user-name">
-              {{ user.username }}
-            </span>
-          </div>
+          <span class="user-name">
+            {{ user.username }}
+          </span>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main class="app-content">
-      <router-outlet />
-    </main>
-  </div>
+  <main class="app-content">
+    <router-outlet />
+  </main>
+</div>
 }

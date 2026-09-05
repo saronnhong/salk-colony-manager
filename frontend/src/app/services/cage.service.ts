@@ -8,6 +8,8 @@ import {
   CageMoveRequest,
   RackPositionSummary,
   CageLocationHistory,
+  CageResponsibilityRequest,
+  ColonyUser,
 } from '../models/cage.model';
 
 @Injectable({
@@ -51,6 +53,28 @@ export class CageService {
   ): Observable<CageLocationHistory[]> {
     return this.http.get<CageLocationHistory[]>(
       `${this.apiUrl}/${cageId}/location-history/`
+    );
+  }
+
+  assignResponsibility(
+    cageId: string,
+    request: CageResponsibilityRequest
+  ) {
+    return this.http.post(
+      `http://localhost:8000/api/cages/${cageId}/responsibility/`,
+      request,
+      {
+        withCredentials: true,
+      }
+    );
+  }
+
+  getColonyUsers() {
+    return this.http.get<ColonyUser[]>(
+      'http://localhost:8000/api/users/',
+      {
+        withCredentials: true,
+      }
     );
   }
 }

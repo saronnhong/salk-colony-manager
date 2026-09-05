@@ -1,50 +1,43 @@
-AI_NOTES.md
-AI Tools Used
+# AI Notes
 
-I used Claude AI primarily as a senior-engineer-style planning and implementation assistant. I used it to explore the initial data model, reason through temporal animal/cage location history, generate an initial set of Django models and PostgreSQL migrations, and discuss API and application architecture.
+AI tools were used throughout this project as development assistants. I used them to discuss architecture and data-model tradeoffs, generate implementation starting points, review code, troubleshoot errors, and identify edge cases. All generated code was reviewed and tested before being included.
 
-I also used ChatGPT to review architectural decisions and generated code, troubleshoot Django/PostgreSQL issues, and validate the implementation against the version of Django used by the project.
+## Tools Used
 
-I used GitHub Copilot in VS Code for inline code completion and small implementation tasks.
+* **Claude / Claude Code** — architecture discussions, data-model review, multi-file implementation planning, and code review.
+* **GitHub Copilot** — inline code completion, repetitive implementation work, and boilerplate.
+* **ChatGPT** — architecture discussion, implementation guidance, debugging, test planning, and documentation.
 
-All AI-generated code was reviewed before being incorporated into the project. I treated generated code as a starting point rather than assuming it was correct.
+I generally used AI for larger design discussions before implementation, then used inline assistance while coding and manually tested the resulting workflows.
 
-Decisions and Corrections
-1. Temporal location history instead of mutable location fields
+## Examples Where AI Was Wrong or Incomplete
 
-The initial design discussion considered storing an animal's current cage directly on the Animal model. I decided against making this the source of truth because updating a cage_id would destroy historical location information.
+**1. Assumptions about the existing Django models**
 
-Instead, the application models location as temporal assignments:
+AI occasionally generated code based on assumed field names or types that did not match the actual models. For example, import logic initially treated `Animal.strain` like a string even though it is a foreign key to `Strain`. I corrected the implementation to resolve and assign the actual `Strain` instance and verified the importer against PostgreSQL.
 
-AnimalCageAssignment records when an animal occupied a cage.
-CageRackPositionAssignment records when a cage occupied a rack position.
+**2. Missing dependencies between generated changes**
 
-This also keeps cage identity separate from physical location. Moving a cage therefore does not require changing the location history of every animal inside it.
+While adding cage responsibility/coverage, generated code referenced `CageResponsibilityAssignmentSerializer` and `assign_cage_responsibility` from the view before the corresponding imports were present. Django exposed these as `NameError` exceptions during testing. I traced the errors, corrected the imports, and retested the complete Angular → REST API → PostgreSQL workflow.
 
-PostgreSQL exclusion constraints prevent an animal or rack position from having overlapping active assignments.
+**3. GitHub OAuth vs. OIDC**
 
-2. I rejected room-scoped animal identifiers
+The assignment's authentication wording led to discussion of GitHub and OIDC. Standard GitHub end-user login is an OAuth flow and should not simply be described as GitHub OIDC. I kept the implementation and documentation explicit about this distinction rather than presenting the authentication mechanism as something it is not.
 
-An early generated model added a room foreign key to AnimalLocalIdentifier so identifiers could be made unique within a room.
+## What I Verified
 
-I removed this approach.
+I manually exercised the major application workflows, including:
 
-Local animal identifiers can be reused, entered incorrectly, and are not inherently tied to a room. Room is also temporal because an animal can move. Storing the current room on an identifier would duplicate information derived from the animal → cage → rack position history and would require keeping that value synchronized whenever an animal or cage moved.
+* GitHub authentication and role-based authorization
+* animal and cage moves and location history
+* husbandry recording and corrections
+* cage ownership and temporary coverage
+* audit history and supported undo operations
+* CSV import preview, validation, partial commit, duplicate-file protection, and whole-import undo
+* active-animal census CSV export
+* QR cage records and printable cage cards
+* deterministic demo-data generation and rerunning the seed without duplicating the colony
 
-Instead, identifiers remain searchable records associated with the animal, and ambiguity can be handled explicitly by the application rather than imposing an unsupported uniqueness rule.
+I also reviewed database constraints and transaction boundaries for operations where concurrent or partial writes could create invalid colony state.
 
-3. Current location is derived rather than duplicated
-
-The initial design considered caching fields such as Animal.current_cage and Cage.current_rack_position.
-
-I decided not to maintain these duplicate fields. At the expected scale of a few hundred animals, PostgreSQL can derive current location efficiently from the temporal assignment tables.
-
-The application therefore uses database views for current animal and cage locations while retaining the assignment tables as the source of truth.
-
-4. Undo is a new operation, not deletion of history
-
-For auditing, I chose to group changes under AuditOperation records with individual AuditLog entries describing affected records.
-
-Undo does not delete the original operation. Instead, it creates a new compensating operation referencing the operation it reverses. This preserves the fact that the original action occurred and records who reversed it and when.
-
-While implementing this, an AI-generated property accessed Django's dynamically generated reversed_by_operations relationship directly. Pylance could not infer that relationship. I replaced it with an explicit AuditOperation.objects.filter(reverses_operation=self).exists() query, which is clearer to static analysis while preserving the same behavior.
+AI output was treated as a starting point rather than a source of truth; implementation decisions were checked against the actual application models, database behavior, assignment requirements, and observed runtime results.

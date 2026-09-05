@@ -1,4 +1,4 @@
-<main class="page cage-detail">
+<main class="page cage-detail screen-only">
   <a routerLink="/cages" class="back-link">← Cages</a>
 
   @if (loading()) {
@@ -11,10 +11,22 @@
 
   @if (!loading() && cage(); as currentCage) {
   <header class="cage-header">
-    <div>
+    <div class="cage-header-info">
       <p class="eyebrow">Cage</p>
+
       <h1>{{ currentCage.cage_code }}</h1>
-      <p class="cage-type">{{ currentCage.cage_type }}</p>
+
+      <p class="cage-type">
+        {{ currentCage.cage_type }}
+      </p>
+    </div>
+
+    <div class="cage-card-qr">
+      <qrcode [qrdata]="cageQrUrl()" [width]="140" [errorCorrectionLevel]="'M'"></qrcode>
+
+      <span>
+        Scan for cage record
+      </span>
     </div>
   </header>
 
@@ -27,7 +39,7 @@
       </button>
     </div>
 
-    @if (cage()?.current_location; as location) {
+    @if (currentCage.current_location; as location) {
     <p class="location-summary">
       {{ location.room.name }}
       ·
@@ -50,6 +62,9 @@
       <div class="form-field">
         <label for="destination-position">
           Destination position
+          <span class="required" aria-hidden="true">
+            *
+          </span>
         </label>
 
         <select id="destination-position" formControlName="destination_rack_position_id">
@@ -116,45 +131,6 @@
     }
   </section>
 
-  <section>
-    <h2>Location history</h2>
-
-    @if (locationHistory().length === 0) {
-    <p>No location history found.</p>
-    } @else {
-    <div class="history-list">
-      @for (
-      item of locationHistory();
-      track item.id
-      ) {
-      <article class="history-item">
-        <strong>
-          {{ item.room || 'Unknown room' }}
-          ·
-          {{ item.rack }}
-          ·
-          {{ item.position }}
-        </strong>
-
-        <p>
-          From {{ item.valid_from | date:'medium' }}
-
-          @if (item.valid_to) {
-          to {{ item.valid_to | date:'medium' }}
-          } @else {
-          · Current
-          }
-        </p>
-
-        @if (item.reason) {
-        <p>{{ item.reason }}</p>
-        }
-      </article>
-      }
-    </div>
-    }
-  </section>
-
   <section class="section">
     <h2>Responsibility</h2>
 
@@ -193,30 +169,339 @@
       </div>
       }
     </div>
+    @if (coverageSuccess()) {
+    <p class="success-message" aria-live="polite">
+      {{ coverageSuccess() }}
+    </p>
+    }
+
+    @if (coverageFormVisible()) {
+    <form class="coverage-form" [formGroup]="coverageForm" (ngSubmit)="submitCoverage()">
+      <div class="form-field">
+        <label for="coverage-user">
+          Coverage person
+          <span class="required" aria-hidden="true">
+            *
+          </span>
+        </label>
+
+        <select id="coverage-user" formControlName="user_id">
+          <option [ngValue]="null">
+            Select a person
+          </option>
+
+          @for (
+          user of colonyUsers();
+          track user.id
+          ) {
+          <option [ngValue]="user.id">
+            {{ user.name }}
+          </option>
+          }
+        </select>
+
+        @if (
+        coverageForm.controls.user_id.touched &&
+        coverageForm.controls.user_id.invalid
+        ) {
+        <p class="field-error">
+          Select a coverage person.
+        </p>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="coverage-end">
+          Coverage through
+          <span>(optional)</span>
+        </label>
+
+        <input id="coverage-end" type="datetime-local" formControlName="valid_to" />
+      </div>
+
+      <div class="form-field">
+        <label for="coverage-notes">
+          Notes
+          <span>(optional)</span>
+        </label>
+
+        <textarea id="coverage-notes" rows="3" formControlName="notes"
+          placeholder="Example: Vacation coverage"></textarea>
+      </div>
+
+      @if (coverageError()) {
+      <p class="error-message" aria-live="assertive">
+        {{ coverageError() }}
+      </p>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="secondary-button" (click)="cancelCoverage()" [disabled]="savingCoverage()">
+          Cancel
+        </button>
+
+        <button type="submit" class="primary-button" [disabled]="savingCoverage()">
+          @if (savingCoverage()) {
+          Saving...
+          } @else {
+          Assign Coverage
+          }
+        </button>
+      </div>
+    </form>
+    }
+    <button type="button" class="assign-cover-btn secondary-button" (click)="showCoverageForm()">
+      Assign Coverage
+    </button>
   </section>
 
   <section class="section">
     <div class="section-header">
       <h2>Animals</h2>
-      <span>{{ currentCage.animals.length }}</span>
+
+      <span>
+        {{ currentCage.animals.length }}
+      </span>
     </div>
 
     <div class="animal-list">
-      @for (animal of currentCage.animals; track animal.id) {
+      @for (
+      animal of currentCage.animals;
+      track animal.id
+      ) {
       <article class="animal-card">
-        <a [routerLink]="['/animals', animal.id]">
-          {{ animal.identifier || 'Unidentified animal' }}
+        <a [routerLink]="[
+                '/animals',
+                animal.id
+              ]">
+          {{
+          animal.identifier
+          || 'Unidentified animal'
+          }}
         </a>
 
         <div class="animal-details">
-          <span>{{ animal.sex }}</span>
-          <span>{{ animal.date_of_birth }}</span>
+          <span>
+            {{ animal.sex }}
+          </span>
+
+          <span>
+            {{ animal.date_of_birth }}
+          </span>
         </div>
       </article>
       } @empty {
-      <p>No animals are currently assigned to this cage.</p>
+      <p>
+        No animals are currently assigned
+        to this cage.
+      </p>
       }
     </div>
+
+    <div class="cage-card-actions no-print">
+      <button type="button" class="secondary-action" (click)="printCageCard()">
+        Print Cage Card
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Location history</h2>
+
+    @if (locationHistory().length === 0) {
+    <p>No location history found.</p>
+    } @else {
+    <div class="history-list">
+      @for (
+      item of locationHistory();
+      track item.id
+      ) {
+      <article class="history-item">
+        <strong>
+          {{ item.room || 'Unknown room' }}
+          ·
+          {{ item.rack }}
+          ·
+          {{ item.position }}
+        </strong>
+
+        <p>
+          From
+          {{ item.valid_from | date:'medium' }}
+
+          @if (item.valid_to) {
+          to
+          {{
+          item.valid_to
+          | date:'medium'
+          }}
+          } @else {
+          · Current
+          }
+        </p>
+
+        @if (item.reason) {
+        <p>
+          {{ item.reason }}
+        </p>
+        }
+      </article>
+      }
+    </div>
+    }
   </section>
   }
 </main>
+
+
+@if (cage(); as currentCage) {
+<section class="print-cage-card">
+
+  <!-- Cage identity + QR -->
+  <header class="print-card-header">
+    <div class="print-card-identity">
+      <p class="print-label">Cage</p>
+
+      <h1>{{ currentCage.cage_code }}</h1>
+
+      <p class="print-cage-type">
+        {{ currentCage.cage_type }}
+      </p>
+
+      @if (currentCage.current_location) {
+      <p class="print-location">
+        {{ currentCage.current_location.room.name }}
+        ·
+        {{ currentCage.current_location.rack.rack_code }}
+        ·
+        {{ currentCage.current_location.position.position_label }}
+      </p>
+      } @else {
+      <p class="print-location">
+        Location unassigned
+      </p>
+      }
+    </div>
+
+    <div class="print-card-qr">
+      <qrcode [qrdata]="cageQrUrl()" [width]="150" [errorCorrectionLevel]="'M'"></qrcode>
+
+      <span>
+        Scan for current cage record
+      </span>
+    </div>
+  </header>
+
+
+  <!-- Animals -->
+  <section class="print-card-section">
+    <div class="print-section-header">
+      <h2>Animals</h2>
+
+      <span>
+        {{ currentCage.animals.length }}
+      </span>
+    </div>
+
+    @if (currentCage.animals.length > 0) {
+    <div class="print-animal-table">
+
+      <div class="print-animal-heading">
+        <span>ID</span>
+        <span>Sex</span>
+        <span>DOB</span>
+      </div>
+
+      @for (
+      animal of currentCage.animals;
+      track animal.id
+      ) {
+      <div class="print-animal-row">
+        <strong>
+          {{
+          animal.identifier ||
+          'Unidentified'
+          }}
+        </strong>
+
+        <span>
+          {{ animal.sex }}
+        </span>
+
+        <span>
+          {{
+          animal.date_of_birth ||
+          'Unknown'
+          }}
+        </span>
+      </div>
+      }
+    </div>
+    } @else {
+    <p>
+      No animals currently assigned.
+    </p>
+    }
+  </section>
+
+
+  <!-- Responsibility -->
+  <section class="print-card-section">
+    <h2>Responsibility</h2>
+
+    <div class="print-responsibility">
+
+      <div>
+        <span class="print-label">
+          Primary
+        </span>
+
+        @if (currentCage.primary_owner) {
+        <strong>
+          {{ currentCage.primary_owner.name }}
+        </strong>
+        } @else {
+        <strong>
+          Unassigned
+        </strong>
+        }
+      </div>
+
+
+      <div>
+        <span class="print-label">
+          Coverage
+        </span>
+
+        @if (currentCage.current_coverage) {
+        <strong>
+          {{ currentCage.current_coverage.name }}
+        </strong>
+
+        @if (currentCage.current_coverage.valid_to) {
+        <span class="print-coverage-date">
+          Through
+          {{
+          currentCage.current_coverage.valid_to
+          | date:'mediumDate'
+          }}
+        </span>
+        }
+        } @else {
+        <strong>
+          None
+        </strong>
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Footer -->
+  <footer class="print-card-footer">
+    Scan the QR code to verify current cage,
+    animal, location, and responsibility information.
+  </footer>
+
+</section>
+}

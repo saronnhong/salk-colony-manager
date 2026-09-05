@@ -1,11 +1,20 @@
 <main class="page">
+  <div class="page-actions">
+    <button type="button" class="secondary-action" (click)="goToAnimalImport()">
+      Import animals
+    </button>
+    <button type="button" class="secondary-action" (click)="downloadCensus()">
+      Export CSV
+    </button>
+  </div>
   <header class="page-header">
     <div>
       <p class="eyebrow">
         Colony Manager
       </p>
-
       <h1>Cages</h1>
+      <br>
+
     </div>
 
     <span class="count">
@@ -14,25 +23,23 @@
   </header>
 
   @if (loading()) {
-    <p>Loading cages...</p>
+  <p>Loading cages...</p>
   }
 
   @if (!loading() && error()) {
-    <p role="alert">
-      {{ error() }}
-    </p>
+  <p role="alert">
+    {{ error() }}
+  </p>
   }
 
   @if (!loading() && !error()) {
-    <div class="cage-list">
-      @for (cage of cages(); track cage.id) {
-        <app-cage-card
-          [cage]="cage"
-        />
-      } @empty {
-        <p>No cages found.</p>
-      }
-    </div>
+  <div class="cage-list">
+    @for (cage of cages(); track cage.id) {
+    <app-cage-card [cage]="cage" />
+    } @empty {
+    <p>No cages found.</p>
+    }
+  </div>
   }
   <app-recent-actions />
 </main>

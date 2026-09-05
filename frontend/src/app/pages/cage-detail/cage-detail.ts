@@ -7,15 +7,23 @@ import {
   FormsModule,
 } from '@angular/forms';
 
-import { CageDetailModel, RackPositionSummary, CageLocationHistory } from '../../models/cage.model';
+import {
+  CageDetailModel,
+  RackPositionSummary,
+  CageLocationHistory,
+  CageResponsibilityRequest,
+  ColonyUser
+} from '../../models/cage.model';
 import { CageService } from '../../services/cage.service';
 import { DatePipe } from '@angular/common';
 // import { RecentActions } from '../../components/recent-actions/recent-actions';
-
+import {
+  QRCodeComponent,
+} from 'angularx-qrcode';
 
 @Component({
   selector: 'app-cage-detail',
-  imports: [RouterLink, DatePipe, ReactiveFormsModule, FormsModule],
+  imports: [RouterLink, DatePipe, ReactiveFormsModule, FormsModule, QRCodeComponent],
   templateUrl: './cage-detail.html',
   styleUrl: './cage-detail.scss',
 })
@@ -33,6 +41,23 @@ export class CageDetail implements OnInit {
   moving = signal(false);
   moveError = signal<string | null>(null);
   moveSuccess = signal<string | null>(null);
+
+  coverageFormVisible = signal(false);
+  savingCoverage = signal(false);
+  coverageError = signal('');
+  coverageSuccess = signal('');
+  colonyUsers = signal<ColonyUser[]>([]);
+
+  coverageForm = this.fb.group({
+    user_id: [
+      null as number | null,
+      Validators.required,
+    ],
+
+    valid_to: [''],
+
+    notes: [''],
+  });
 
   moveForm = this.fb.group({
     destination_rack_position_id: [
@@ -59,6 +84,7 @@ export class CageDetail implements OnInit {
     this.loadCage(id);
     this.loadRackPositions();
     this.loadLocationHistory(id);
+    this.loadColonyUsers();
   }
 
   private loadCage(id: string): void {
@@ -186,5 +212,124 @@ export class CageDetail implements OnInit {
         this.locationHistory.set([]);
       },
     });
+  }
+
+  cageQrUrl(): string {
+    return window.location.href;
+  }
+
+  printCageCard(): void {
+    const currentCage = this.cage();
+
+    if (!currentCage) {
+      return;
+    }
+
+    const originalTitle = document.title;
+
+    document.title = `Cage-${currentCage.cage_code}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+
+      window.removeEventListener(
+        'afterprint',
+        restoreTitle
+      );
+    };
+
+    window.addEventListener(
+      'afterprint',
+      restoreTitle
+    );
+
+    window.print();
+  }
+
+  showCoverageForm(): void {
+    this.coverageError.set('');
+    this.coverageSuccess.set('');
+    this.coverageFormVisible.set(true);
+  }
+
+  cancelCoverage(): void {
+    this.coverageFormVisible.set(false);
+    this.coverageError.set('');
+    this.coverageForm.reset();
+  }
+
+  submitCoverage(): void {
+    const currentCage = this.cage();
+
+    if (
+      !currentCage ||
+      this.coverageForm.invalid
+    ) {
+      this.coverageForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue =
+      this.coverageForm.getRawValue();
+
+    const request: CageResponsibilityRequest = {
+      user_id: formValue.user_id!,
+      responsibility_type: 'coverage',
+      notes: formValue.notes || '',
+    };
+
+    if (formValue.valid_to) {
+      request.valid_to =
+        new Date(
+          formValue.valid_to
+        ).toISOString();
+    }
+
+    this.savingCoverage.set(true);
+    this.coverageError.set('');
+    this.coverageSuccess.set('');
+
+    this.cageService
+      .assignResponsibility(
+        currentCage.id,
+        request
+      )
+      .subscribe({
+        next: () => {
+          this.savingCoverage.set(false);
+
+          this.coverageSuccess.set(
+            'Coverage assigned.'
+          );
+
+          this.coverageFormVisible.set(false);
+          this.coverageForm.reset();
+
+          this.loadCage(currentCage.id);
+        },
+
+        error: (error) => {
+          this.savingCoverage.set(false);
+
+          this.coverageError.set(
+            error.error?.detail ||
+            'Unable to assign coverage.'
+          );
+        },
+      });
+  }
+
+  loadColonyUsers(): void {
+    this.cageService
+      .getColonyUsers()
+      .subscribe({
+        next: (users) => {
+          this.colonyUsers.set(users);
+        },
+
+        error: () => {
+          this.colonyUsers.set([]);
+        },
+      });
   }
 }
