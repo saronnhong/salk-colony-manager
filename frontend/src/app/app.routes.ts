@@ -7,6 +7,8 @@ import { Routes } from '@angular/router';
 import { CageList } from './pages/cage-list/cage-list';
 import { CageDetail } from './pages/cage-detail/cage-detail';
 import { AnimalDetail } from './components/animal-detail/animal-detail';
+import { Login } from './pages/login/login';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -14,18 +16,30 @@ export const routes: Routes = [
     redirectTo: 'cages',
     pathMatch: 'full'
   },
+
+  {
+    path: 'login',
+    component: Login
+  },
+
   {
     path: 'cages',
-    component: CageList
+    component: CageList,
+    canActivate: [authGuard]
   },
+
   {
     path: 'cages/:id',
-    component: CageDetail
+    component: CageDetail,
+    canActivate: [authGuard]
   },
+
   {
     path: 'animals/:id',
-    component: AnimalDetail
+    component: AnimalDetail,
+    canActivate: [authGuard]
   },
+
   {
     path: 'imports/animals',
     loadComponent: () =>
@@ -34,7 +48,9 @@ export const routes: Routes = [
       ).then(
         (m) => m.AnimalImportComponent,
       ),
+    canActivate: [authGuard]
   },
+
   {
     path: '**',
     redirectTo: 'cages'

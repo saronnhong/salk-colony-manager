@@ -55,7 +55,11 @@
           <span class="user-name">
             {{ user.username }}
           </span>
+
         </div>
+        <button type="button" class="logout-button" (click)="logout()">
+          Log out
+        </button>
       </div>
     </div>
   </header>
@@ -64,4 +68,7 @@
     <router-outlet />
   </main>
 </div>
+}
+@else {
+<router-outlet />
 }

@@ -7,13 +7,13 @@ import {
   ImportBatchPreview,
   ImportCommitResponse,
 } from '../models/import-preview.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ImportService {
-  private readonly apiUrl =
-    'http://localhost:8000/api/imports/animals';
+private readonly apiUrl = `${environment.apiBaseUrl}/api/imports/animals`;
 
   constructor(
     private http: HttpClient,

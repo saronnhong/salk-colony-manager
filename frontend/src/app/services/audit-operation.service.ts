@@ -3,13 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { AuditOperation } from '../models/audit-operation.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuditOperationService {
-  private readonly apiUrl =
-    'http://localhost:8000/api/audit-operations';
+  private readonly apiUrl = `${environment.apiBaseUrl}/api/audit-operations`;
 
   constructor(private http: HttpClient) {}
 

@@ -89,6 +89,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
+    "https://colony.saronnhong.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -98,12 +99,24 @@ SECURE_PROXY_SSL_HEADER = (
     "https",
 )
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+IS_PRODUCTION = os.getenv(
+    "IS_PRODUCTION",
+    "False",
+).lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+CSRF_COOKIE_SAMESITE = "Lax"
 
 CSRF_TRUSTED_ORIGINS = [
     "https://api.saronnhong.com",
     "http://localhost:4200",
+    "https://colony.saronnhong.com",
 ]
 
 # CORS_ALLOW_ALL_ORIGINS = True
@@ -210,5 +223,21 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-LOGIN_REDIRECT_URL = "http://localhost:4200/"
-LOGOUT_REDIRECT_URL = "http://localhost:4200/"
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:4200",
+)
+
+LOGIN_REDIRECT_URL = f"{FRONTEND_URL}/"
+LOGOUT_REDIRECT_URL = f"{FRONTEND_URL}/"
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+IS_PRODUCTION = os.getenv(
+    "IS_PRODUCTION",
+    "False",
+).lower() in (
+    "1",
+    "true",
+    "yes",
+)

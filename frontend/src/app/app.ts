@@ -22,4 +22,8 @@ export class App implements OnInit {
   goHome(): void {
     this.router.navigate(['/']);
   }
+
+  logout(): void {
+    this.authService.logout();
+}
 }

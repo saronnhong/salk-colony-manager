@@ -12,11 +12,13 @@ import {
   ColonyUser,
 } from '../models/cage.model';
 
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class CageService {
-  private readonly apiUrl = 'http://localhost:8000/api/cages';
+  private readonly apiUrl = `${environment.apiBaseUrl}/api/cages`;
 
   constructor(private http: HttpClient) { }
 
@@ -44,7 +46,7 @@ export class CageService {
 
   getRackPositions(): Observable<RackPositionSummary[]> {
     return this.http.get<RackPositionSummary[]>(
-      'http://localhost:8000/api/rack-positions/'
+      `${environment.apiBaseUrl}/api/rack-positions/`
     );
   }
 
@@ -61,7 +63,7 @@ export class CageService {
     request: CageResponsibilityRequest
   ) {
     return this.http.post(
-      `http://localhost:8000/api/cages/${cageId}/responsibility/`,
+      `${environment.apiBaseUrl}/api/cages/${cageId}/responsibility/`,
       request,
       {
         withCredentials: true,
@@ -71,7 +73,7 @@ export class CageService {
 
   getColonyUsers() {
     return this.http.get<ColonyUser[]>(
-      'http://localhost:8000/api/users/',
+      `${environment.apiBaseUrl}/api/users/`,
       {
         withCredentials: true,
       }

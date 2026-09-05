@@ -7,13 +7,14 @@ import {
   HusbandryEventCreateRequest,
   HusbandryEventCorrectionRequest
 } from '../models/husbandry-event.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class HusbandryEventService {
-  private readonly apiUrl =
-    'http://localhost:8000/api/husbandry-events';
+  private readonly apiUrl = `${environment.apiBaseUrl}/api/husbandry-events`;
+  
 
   constructor(private http: HttpClient) {}
 
