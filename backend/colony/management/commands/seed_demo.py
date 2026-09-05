@@ -950,17 +950,15 @@ class Command(BaseCommand):
                     )
                 )
 
-                has_current_cage = (
+                has_assignment_history = (
                     AnimalCageAssignment.objects
                     .filter(
                         animal=animal,
-                        valid_to__isnull=True,
-                        system_to__isnull=True,
                     )
                     .exists()
                 )
 
-                if not has_current_cage:
+                if not has_assignment_history:
                     AnimalCageAssignment.objects.create(
                         animal=animal,
                         cage=cage,
