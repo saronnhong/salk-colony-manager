@@ -60,13 +60,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "django.contrib.postgres",
-    "colony",
     "rest_framework",
     "corsheaders",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.github",
+    "colony.apps.ColonyConfig",
 ]
 
 MIDDLEWARE = [
