@@ -4,6 +4,7 @@ import { provideHttpClient, withInterceptors, } from '@angular/common/http';
 import {
   credentialsInterceptor,
 } from './interceptors/credentials.interceptor';
+import { csrfInterceptor } from './interceptors/csrf.interceptor';
 
 import { routes } from './app.routes';
 
@@ -14,6 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         credentialsInterceptor,
+        csrfInterceptor,
       ]),
     ),
   ]

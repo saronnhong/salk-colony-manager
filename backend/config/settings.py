@@ -113,6 +113,12 @@ SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = IS_PRODUCTION
 CSRF_COOKIE_SAMESITE = "Lax"
 
+CSRF_COOKIE_DOMAIN = (
+    ".saronnhong.com"
+    if IS_PRODUCTION
+    else None
+)
+
 CSRF_TRUSTED_ORIGINS = [
     "https://api.saronnhong.com",
     "http://localhost:4200",
