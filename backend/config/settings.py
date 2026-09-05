@@ -31,12 +31,22 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv(
+    "DEBUG",
+    "False",
+).lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "testserver",
+    host.strip()
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "localhost,127.0.0.1,testserver",
+    ).split(",")
+    if host.strip()
 ]
 
 

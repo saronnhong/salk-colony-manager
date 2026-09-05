@@ -7,3 +7,4 @@ python-dotenv==1.2.3
 django-cors-headers==4.9.0
 django-allauth==65.19.2
 requests==2.34.2
+gunicorn==26.2.0
