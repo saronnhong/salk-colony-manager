@@ -349,6 +349,16 @@ td {
   font-size: 0.9rem;
 }
 
+.commit-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.undo-button {
+  cursor: pointer;
+}
+
 @media (max-width: 600px) {
   .commit-section {
     align-items: stretch;

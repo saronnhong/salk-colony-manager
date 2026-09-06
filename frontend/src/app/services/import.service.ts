@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import {
   ImportBatchPreview,
   ImportCommitResponse,
+  ImportUndoResponse,
 } from '../models/import-preview.model';
 import { environment } from '../../environments/environment';
 
@@ -13,11 +14,11 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class ImportService {
-private readonly apiUrl = `${environment.apiBaseUrl}/api/imports/animals`;
+  private readonly apiUrl = `${environment.apiBaseUrl}/api/imports/animals`;
 
   constructor(
     private http: HttpClient,
-  ) {}
+  ) { }
 
   previewAnimalImport(
     file: File,
@@ -37,10 +38,19 @@ private readonly apiUrl = `${environment.apiBaseUrl}/api/imports/animals`;
 
   commitAnimalImport(
     batchId: number,
-    ): Observable<ImportCommitResponse> {
+  ): Observable<ImportCommitResponse> {
     return this.http.post<ImportCommitResponse>(
-        `${this.apiUrl}/${batchId}/commit/`,
-        {},
+      `${this.apiUrl}/${batchId}/commit/`,
+      {},
     );
-    }
+  }
+
+  undoAnimalImport(
+    batchId: number,
+  ): Observable<ImportUndoResponse> {
+    return this.http.post<ImportUndoResponse>(
+      `${this.apiUrl}/${batchId}/undo/`,
+      {},
+    );
+  }
 }

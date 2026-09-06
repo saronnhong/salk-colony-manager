@@ -1,20 +1,23 @@
 <main class="page">
+
   <div class="page-actions">
     <button type="button" class="secondary-action" (click)="goToAnimalImport()">
       Import animals
     </button>
+
     <button type="button" class="secondary-action" (click)="downloadCensus()">
       Export CSV
     </button>
   </div>
+
   <header class="page-header">
     <div>
       <p class="eyebrow">
         Colony Manager
       </p>
+
       <h1>Cages</h1>
       <br>
-
     </div>
 
     <span class="count">
@@ -33,13 +36,38 @@
   }
 
   @if (!loading() && !error()) {
-  <div class="cage-list">
-    @for (cage of cages(); track cage.id) {
-    <app-cage-card [cage]="cage" />
-    } @empty {
-    <p>No cages found.</p>
+  <section id="cage-list">
+
+    <div class="cage-list">
+      @for (cage of paginatedCages; track cage.id) {
+      <app-cage-card [cage]="cage" />
+      } @empty {
+      <p>No cages found.</p>
+      }
+    </div>
+
+    @if (totalPages > 1) {
+    <div class="pagination" aria-label="Cage list pagination">
+      <button mat-stroked-button type="button" (click)="previousPage()" [disabled]="currentPage === 0">
+        Previous
+      </button>
+
+      <span class="pagination-status">
+        Page {{ currentPage + 1 }}
+        of {{ totalPages }}
+      </span>
+
+      <button mat-stroked-button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages - 1">
+        Next
+      </button>
+    </div>
     }
-  </div>
+
+  </section>
   }
-  <app-recent-actions />
+
+  <section id="recent-actions" tabindex="-1">
+    <app-recent-actions />
+  </section>
+
 </main>

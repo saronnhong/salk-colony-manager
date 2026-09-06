@@ -1,73 +1,190 @@
-# Salk Colony Manager
+# Animal Colony Manager
 
-A full-stack animal colony management application built for the Salk Institute AIRC Research Software Engineer take-home exercise.
+**Live application:** https://colony.saronnhong.com
+**API:** https://api.saronnhong.com
+**Demo video:** `<ADD VIDEO LINK>`
 
-The application is designed to help research teams answer a deceptively difficult question reliably:
+A full-stack animal colony management application built for the Salk Institute AIRC Research Software Engineer take-home assignment.
 
-**Where is every animal right now, how did it get there, and who is responsible for it?**
+The application is designed for research labs that need to track animals, cages, physical locations, husbandry activity, and personnel responsibilities while preserving a clear history of changes.
 
-It provides temporal animal and cage tracking, husbandry records, cage ownership and coverage, printable QR cage cards, spreadsheet ingestion, census export, role-based authorization, and auditable/reversible operational workflows.
+## Features
 
-> **Demo video:** Coming soon
-> **Live application:** Coming soon
+### Colony location tracking
 
----
+The application models physical location separately from identity:
 
-## Overview
+**Animal → Cage → Rack Position → Rack → Room**
 
-Animal colony data changes constantly. Animals move between cages, cages move between rack positions, racks may move between rooms, husbandry events are recorded after the fact, and responsibility changes when researchers are unavailable.
+Animals, cages, and racks can move without replacing their underlying records. Location changes are stored as time-based assignments so previous locations remain available after a move.
 
-Salk Colony Manager models those changes as historical records rather than overwriting the current state.
+Current location is derived from assignment history rather than stored as a mutable location field.
 
-The core location hierarchy is:
+Database constraints prevent conflicting current assignments, including:
+
+* an animal occupying multiple cages at the same time
+* a cage occupying multiple rack positions at the same time
+* multiple cages occupying the same rack position at the same time
+* a rack occupying multiple rooms at the same time
+
+### Animal and cage history
+
+Animal and cage detail pages display current location information and location history.
+
+Moves are recorded as first-class operations containing information about who performed the action, when it occurred, and why.
+
+### Husbandry events
+
+Users can record husbandry events including:
+
+* health checks
+* weights
+* treatments
+* cage changes
+* transfers
+* deaths
+* weaning
+* tail snips
+
+The application distinguishes the time an event occurred from the time it was recorded. This allows users to enter events later while preserving the actual event date.
+
+Husbandry events also support corrections so historical information does not have to be silently overwritten.
+
+### Ownership and vacation coverage
+
+Cages can have a primary responsible user as well as temporary coverage assignments.
+
+Coverage includes a validity period, allowing another lab member to cover cages during vacations or other absences without replacing the underlying primary ownership history.
+
+### Audit history and undo
+
+Important colony operations create audit records identifying:
+
+* the user who performed the operation
+* when it was performed
+* the type of operation
+* the affected records
+* old and new values where applicable
+
+Animal and cage moves can be undone through compensating operations. Undo does not erase the original action; both the original operation and its reversal remain in the audit history.
+
+### Spreadsheet import
+
+CSV animal imports use a two-stage workflow:
+
+1. **Preview and validate**
+2. **Commit valid rows**
+
+Previewing a file does not create animal records.
+
+The importer validates required columns and row data before commit. Invalid rows are displayed to the user and can be skipped while valid rows are imported.
+
+Required CSV columns are:
 
 ```text
-Animal
-  ↓
-AnimalCageAssignment
-  ↓
-Cage
-  ↓
-CageRackPositionAssignment
-  ↓
-RackPosition
-  ↓
-Rack
-  ↓
-RackRoomAssignment
-  ↓
-Room
+local_id,sex,date_of_birth,species,strain,cage_code
 ```
 
-Current state is derived from these temporal records, allowing the application to preserve history while still answering common operational questions quickly.
+The raw file is SHA-256 hashed to prevent the same committed file from being accidentally imported twice.
 
----
+Imports are represented as batches, allowing the entire import to be undone as a single operation.
 
-## Intended Users
+**Undo Import** removes records created by that batch only when doing so is safe. The backend refuses the undo if imported animals have gained later husbandry events, location history, identifiers, or other state that would make deleting the import destructive.
 
-The application supports several common colony-management roles:
+The import batch and audit history remain after undo, providing traceability rather than silently erasing the operation.
 
-* Principal Investigators
-* Lab Managers
-* Researchers
-* Students
-* Facility Veterinarians
+### Census export
 
-Authorization is enforced on mutation endpoints rather than relying only on the frontend.
+The colony can be exported as CSV with current animal and location information, including:
 
-The current role matrix allows:
+* animal ID
+* local identifier
+* sex
+* date of birth
+* species
+* strain
+* cage
+* rack
+* rack position
+* room
 
-| Role                   | Husbandry | Move animals/cages | Undo operations |
-| ---------------------- | --------: | -----------------: | --------------: |
-| Principal Investigator |       Yes |                Yes |             Yes |
-| Lab Manager            |       Yes |                Yes |             Yes |
-| Researcher             |       Yes |                Yes |              No |
-| Student                |       Yes |                 No |              No |
-| Facility Veterinarian  |       Yes |                 No |              No |
+Retired/deceased animals are excluded from the active census.
 
-Room-scoped roles are represented in the data model but are not yet enforced by the authorization layer.
+### QR cage cards
 
----
+Each cage has a printable cage card containing a QR code.
+
+Scanning the QR code opens the cage directly in the web application, providing a fast path from a physical cage to its digital record.
+
+Cards can also be printed or saved as PDF for placement on physical cages.
+
+### Mobile workflow
+
+The application uses responsive layouts and large interaction targets for common colony workflows.
+
+The hosted application has been tested with mobile Safari, including GitHub authentication and QR-code navigation.
+
+The interface is intended to keep common tasks such as opening a cage, recording husbandry information, and reviewing location information short and direct.
+
+## Authentication and authorization
+
+The application demonstrates authentication using GitHub.
+
+GitHub's standard web user authentication flow is OAuth 2.0 rather than a general-purpose OpenID Connect user-login implementation. GitHub does separately support OIDC for GitHub Actions. This distinction is documented rather than describing GitHub OAuth as OIDC.
+
+Authorization is handled independently from authentication.
+
+Application roles include:
+
+* Principal Investigator
+* Lab Manager
+* Researcher
+* Student
+* Veterinarian
+
+Permissions determine who can manage colony locations, record husbandry events, and undo operations.
+
+For the hosted demonstration, newly authenticated GitHub users are automatically assigned the **Lab Manager** role so reviewers can exercise the complete workflow without manual account provisioning.
+
+A production deployment would instead use controlled role provisioning tied to institutional identity and authorization policies.
+
+## Data model
+
+The database is normalized around stable entity identities and temporal assignment records.
+
+Important entities include:
+
+* `Animal`
+* `AnimalLocalIdentifier`
+* `Cage`
+* `Rack`
+* `RackPosition`
+* `Room`
+* `AnimalCageAssignment`
+* `CageRackPositionAssignment`
+* `RackRoomAssignment`
+* `HusbandryEvent`
+* `CageResponsibility`
+* `AuditOperation`
+* `AuditLog`
+* `ImportBatch`
+* `ImportRow`
+
+### Local identifiers
+
+Local animal identifiers are deliberately not primary keys.
+
+Identifiers such as ear tags may be entered incorrectly, reused, or meaningful only within a particular laboratory workflow. Animals therefore use stable UUID primary keys while local identifiers are modeled separately.
+
+### Time and current state
+
+Temporal assignment records use validity intervals to represent when a location was true in the real world.
+
+Location assignment models also include system-time fields to support the distinction between real-world history and when information was represented in the database.
+
+Current-state database views derive current animal, cage, and rack locations from this history.
+
+PostgreSQL exclusion constraints provide a database-level integrity backstop against overlapping assignments.
 
 ## Technology
 
@@ -75,9 +192,9 @@ Room-scoped roles are represented in the data model but are not yet enforced by 
 
 * Angular
 * TypeScript
-* Angular reactive forms
-* QR code generation
-* Responsive HTML/CSS
+* Angular Material
+* Angular signals
+* PWA/service worker support
 
 ### Backend
 
@@ -85,357 +202,82 @@ Room-scoped roles are represented in the data model but are not yet enforced by 
 * Django
 * Django REST Framework
 * django-allauth
-
-### Database
-
 * PostgreSQL
-* PostgreSQL exclusion constraints
-* SQL views for derived current state
+* Gunicorn
+* Nginx
 
-### Authentication
+### Hosting
 
-* GitHub social authentication
-* Django sessions
-* CSRF protection
-* Role-based authorization
+Frontend:
 
----
+* Amazon S3
+* Amazon CloudFront
+* HTTPS
+* `colony.saronnhong.com`
 
-## Core Features
+Backend:
 
-### Animal Location Tracking
+* AWS Lightsail
+* Ubuntu
+* PostgreSQL
+* Gunicorn
+* Nginx
+* HTTPS
+* `api.saronnhong.com`
 
-Animals are assigned to cages using temporal `AnimalCageAssignment` records.
+## Demo data
 
-Moving an animal:
+The application includes a deterministic demo-data management command that creates a realistic colony containing approximately 360 animals distributed across:
 
-1. closes its previous assignment,
-2. creates a new assignment,
-3. records the person performing the operation,
-4. creates a transfer husbandry event,
-5. records audit information for the operation.
-
-An animal's current cage is therefore derived from its assignment history rather than stored as a mutable `current_cage` field.
-
----
-
-## Cage and Rack Location Tracking
-
-Cages are assigned to physical rack positions through `CageRackPositionAssignment`.
-
-Racks are similarly assigned to rooms through `RackRoomAssignment`.
-
-This keeps **identity separate from location**. Moving a cage or rack does not change its identity, and previous locations remain available historically.
-
-PostgreSQL exclusion constraints prevent invalid states such as:
-
-* one animal being in two cages simultaneously,
-* one cage being in two rack positions simultaneously,
-* two cages occupying the same rack position simultaneously,
-* one rack being assigned to two rooms simultaneously.
-
----
-
-## Time and Historical State
-
-Temporal assignments contain:
-
-```text
-valid_from
-valid_to
-system_from
-system_to
-```
-
-`valid_from` and `valid_to` describe when something was true in the real world.
-
-`system_from` and `system_to` describe when the database considered that record authoritative.
-
-This separation provides a foundation for correcting late or out-of-order information without treating the time something happened as the same as the time it was entered.
-
-Current-state SQL views include:
-
-* `AnimalCurrentLocation`
-* `CageCurrentLocation`
-* `RackCurrentRoom`
-
----
-
-## Husbandry
-
-Users with appropriate permissions can record husbandry events including:
-
-* Intake
-* Cage changes
-* Health checks
-* Weight
-* Treatment
-* Death
-* Transfer
-* Weaning
-* Tail snip
-
-Structured event details are stored separately where appropriate, such as weight and treatment data.
-
-The interface provides quick access to recent events, including Today, Yesterday, and All views.
-
-Corrections can reference the original husbandry event rather than silently replacing historical information.
-
-Death records retire the animal and close its current cage assignment, separating a biological disposition from an accidental deletion.
-
----
-
-## Cage Ownership and Coverage
-
-Cages can have a primary responsible user as well as temporary coverage.
-
-Coverage records contain:
-
-* responsible user,
-* start time,
-* optional end time,
-* assigning user,
-* notes.
-
-This supports workflows such as vacation or on-call handoffs while preserving responsibility history.
-
-Current responsibility and coverage are displayed directly on the cage record and printable cage card.
-
----
-
-## QR Cage Cards
-
-Each cage has a printable cage card containing:
-
-* cage identifier,
-* cage type,
-* current location,
-* current animals,
-* primary responsible user,
-* current coverage,
-* QR code.
-
-The QR code points to the cage's application URL.
-
-Scanning a physical cage card therefore provides a direct path to the current digital cage record instead of encoding potentially stale animal/location information directly into the QR code.
-
-Printed cards are formatted separately from the normal application interface, and generated PDFs default to a cage-specific filename such as:
-
-```text
-Cage-D001.pdf
-```
-
----
-
-## Audit Trail and Undo
-
-Important multi-record operations are grouped under an `AuditOperation`.
-
-Individual database changes are captured as `AuditLog` entries containing:
-
-```text
-operation
-table_name
-row_id
-action
-old_values
-new_values
-```
-
-Undo is implemented as a **compensating operation**, rather than deleting history or pretending the original action never occurred.
-
-Animal and cage moves can therefore be reversed while preserving both the original action and the reversal.
-
-The Recent Actions interface exposes operations that remain safe to undo.
-
-Undo is intentionally state-aware. An operation is not offered as reversible when subsequent changes would make that reversal unsafe.
-
----
-
-## Spreadsheet Import
-
-Animal records can be imported from CSV.
-
-Expected columns currently include:
-
-```text
-local_id
-sex
-date_of_birth
-species
-strain
-cage_code
-```
-
-The workflow separates validation from database mutation.
-
-### Preview
-
-Uploading a file first creates an import preview.
-
-Each row is validated independently and classified as valid or invalid. Validation includes:
-
-* required values,
-* supported sex values,
-* date formatting,
-* known strains,
-* active cage identifiers.
-
-No animals are created during preview.
-
-### Commit
-
-The user can explicitly import valid rows after reviewing the preview.
-
-Invalid rows are skipped rather than causing valid rows to be discarded.
-
-All successfully imported records are grouped under one audit operation.
-
-### Idempotency
-
-A SHA-256 hash of the source file is stored with each import batch.
-
-Previously committed files cannot simply be committed again and silently duplicate the same import.
-
-### Whole-Import Undo
-
-An import can be reversed as one operation.
-
-Undo derives the records belonging to the import from the audit trail rather than trusting convenience fields on the import rows.
-
-The application refuses an unsafe import reversal when an imported animal has subsequently been modified, moved, or received husbandry records.
-
-This protects newer colony information from being destroyed by an old undo operation.
-
-### Current Import Limitation
-
-The current importer expects a known set of column names. An interactive arbitrary-column mapping interface was intentionally left out of the initial implementation.
-
----
-
-## Export
-
-The application can export the active animal census as CSV.
-
-The census contains:
-
-```text
-animal_id
-local_id
-sex
-date_of_birth
-species
-strain
-cage_code
-rack
-position
-room
-```
-
-Retired/deceased animals are excluded from the active census.
-
-XLSX and dedicated per-diem reporting are not currently implemented.
-
----
-
-## Authentication
-
-GitHub authentication is implemented using `django-allauth`.
-
-The browser authenticates with the Django backend and subsequent API requests use the authenticated Django session.
-
-Mutation requests are also protected by CSRF validation.
-
-### GitHub OAuth and OIDC
-
-GitHub's standard end-user social login flow is OAuth-based. It should not be confused with GitHub Actions' OIDC support for authenticating CI/CD workloads to cloud providers.
-
-The current application demonstrates GitHub user authentication through the GitHub OAuth flow.
-
-A production deployment could separately use GitHub Actions OIDC for short-lived cloud deployment credentials rather than storing long-lived cloud credentials in GitHub.
-
----
-
-## Demo Data
-
-The project includes a deterministic demo-data management command.
-
-The generated colony contains approximately:
-
-* 2 rooms
-* 6 racks
-* 120 rack positions
-* 90 demo cages
-* 360 demo animals
-* multiple strains
-* cage ownership assignments
+* multiple rooms
+* six racks
+* approximately 90 cages
+* multiple mouse strains
+* primary cage responsibilities
 * temporary vacation coverage
-* recent weights
+* animal movement history
+* cage movement history
+* weights
 * health checks
 * treatments
-* deceased/retired animals
-* historical animal cage assignments
-* historical cage locations
+* deaths/retired animals
 
-Demo animals use deterministic UUIDs so rerunning the seed command does not create duplicate animals.
+The seed command is designed to be idempotent and can be run repeatedly without recreating the colony.
 
-The seed also avoids resetting current locations for animals or cages that have subsequently been moved through the application.
-
-Run:
+Run it with:
 
 ```bash
 python manage.py seed_demo
 ```
 
-The command is designed to be safely rerunnable.
+## Running locally
 
----
+### Backend
 
-## Local Development
-
-### Requirements
-
-Install:
-
-* Python 3
-* Node.js / npm
-* PostgreSQL
-* Git
-
-Clone the repository and configure the backend and frontend separately.
-
----
-
-## Backend Setup
-
-From the backend directory:
+Create and activate a virtual environment:
 
 ```bash
 cd backend
-
 python -m venv .venv
-
 source .venv/bin/activate
-
 pip install -r requirements.txt
 ```
 
-Create a PostgreSQL database and configure the required environment variables.
+Create a PostgreSQL database and configure the required environment variables in `backend/.env`.
 
-Example:
+Example development configuration:
 
 ```text
-POSTGRES_DB=colony_manager
-POSTGRES_USER=your_database_user
-POSTGRES_PASSWORD=your_database_password
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-
-DJANGO_SECRET_KEY=your-secret-key
-
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
+DEBUG=True
+IS_PRODUCTION=False
+FRONTEND_URL=http://localhost:4200
+ALLOWED_HOSTS=localhost,127.0.0.1
+GITHUB_CLIENT_ID=<github-oauth-client-id>
+GITHUB_CLIENT_SECRET=<github-oauth-client-secret>
+DJANGO_SECRET_KEY=<development-secret>
 ```
+
+Database credentials are also supplied through environment variables and are not committed to the repository.
 
 Run migrations:
 
@@ -443,13 +285,7 @@ Run migrations:
 python manage.py migrate
 ```
 
-Optionally create an administrator:
-
-```bash
-python manage.py createsuperuser
-```
-
-Seed demo data:
+Optionally load the demo colony:
 
 ```bash
 python manage.py seed_demo
@@ -467,239 +303,134 @@ The development API runs at:
 http://localhost:8000
 ```
 
----
-
-## Frontend Setup
+### Frontend
 
 From the frontend directory:
 
 ```bash
 cd frontend
-
 npm install
-
 ng serve
 ```
 
-The Angular development application runs at:
+The development application runs at:
 
 ```text
 http://localhost:4200
 ```
 
-Use `localhost` consistently during local authentication rather than mixing `localhost` and `127.0.0.1`, because session and CSRF cookies are host-specific.
+The development frontend environment points API requests to the local Django server.
 
----
+## GitHub authentication setup
 
-## GitHub Authentication Setup
+A GitHub OAuth application is required for local authentication.
 
-Create a GitHub OAuth application for local development.
-
-Configure the callback URL as:
+Development callback URL:
 
 ```text
 http://localhost:8000/accounts/github/login/callback/
 ```
 
-Configure the corresponding client ID and client secret as backend environment variables.
+The hosted deployment uses a separate OAuth application because GitHub OAuth applications support a configured callback URL.
 
-Do not commit the GitHub client secret to source control.
-
-Production deployments require a separate callback URL corresponding to the deployed backend domain.
-
----
-
-## Data Integrity
-
-The application intentionally relies on database constraints in addition to application-level validation.
-
-Examples include:
-
-* foreign-key relationships,
-* valid temporal range checks,
-* partial unique constraints,
-* PostgreSQL exclusion constraints.
-
-Application services use database transactions and row locking for operations such as moves.
-
-This provides a final database-level defense against concurrency errors even when two requests attempt incompatible changes at nearly the same time.
-
----
-
-## Local Identifiers
-
-Animal identifiers such as ear tags or other lab-specific identifiers are modeled separately from the animal's primary key.
-
-Local identifiers are therefore **not assumed to be globally unique, permanent, or correct**.
-
-Animals use UUID primary keys internally.
-
-This allows local identifiers to be changed, reused, retired, or corrected without changing the identity of the underlying animal record.
-
----
-
-## Offline and Patchy Connectivity
-
-Animal facilities may have unreliable Wi-Fi.
-
-The current application requires connectivity for mutations such as:
-
-* animal moves,
-* cage moves,
-* husbandry records,
-* responsibility changes.
-
-This is intentional.
-
-Allowing independent offline writes to physical-location state introduces conflict scenarios where two devices could both believe an animal or cage occupies a different location.
-
-A future offline implementation would cache read-only cage and animal records in IndexedDB and clearly label cached information:
+Production callback:
 
 ```text
-Offline — showing cached data
+https://api.saronnhong.com/accounts/github/login/callback/
 ```
 
-Writes would either remain connectivity-dependent or require an explicit synchronization/conflict-resolution protocol.
+OAuth client secrets and Django secrets are supplied through environment variables and are not stored in source control.
 
-Full offline mutation support was intentionally excluded from the initial implementation.
+## Offline and unreliable network design
 
----
+The application is installable as an Angular PWA and uses a service worker for application assets.
 
-## Backup and Restore
+Full offline mutation/synchronization was intentionally not implemented.
 
-PostgreSQL provides the authoritative persistent datastore.
+Animal moves, cage moves, husbandry events, and other writes have integrity and ordering consequences. Queuing these writes independently on multiple offline devices could create conflicts such as two users assigning the same cage or animal to different locations.
 
-A local database can be backed up using:
+A production extension would cache read-only cage and animal information locally while clearly indicating that the information may be stale. Mutating operations would require connectivity unless a dedicated synchronization/conflict-resolution protocol were introduced.
+
+The application therefore does not silently claim successful colony writes while offline.
+
+## Backup and restore
+
+The PostgreSQL database is designed to be backed up using `pg_dump`.
+
+Example:
 
 ```bash
-pg_dump -Fc colony_manager > colony_manager.dump
+pg_dump \
+  -Fc \
+  -d colony_manager \
+  -f colony_manager.dump
 ```
 
-Restore into an empty database using:
+A backup can be restored into a clean PostgreSQL database using `pg_restore`:
 
 ```bash
+createdb colony_manager_restore
+
 pg_restore \
-  --clean \
-  --if-exists \
-  --dbname=colony_manager \
+  -d colony_manager_restore \
   colony_manager.dump
 ```
 
-Production deployments should use automated encrypted backups stored separately from the application host and periodically test restoration rather than treating successful backup creation as proof that recovery works.
+Production database credentials should be supplied through environment variables or PostgreSQL configuration rather than embedded in backup scripts.
 
-A production backup/restore demonstration is still pending.
+For a production research system, backups should be automated, encrypted, stored separately from the application host, and periodically restore-tested.
 
----
+## Security
 
-## Security and Data Leaving the Machine
+The deployed application uses HTTPS for both frontend and API traffic.
 
-The application sends authentication requests to GitHub when GitHub login is used.
+Production configuration includes:
 
-Colony data is otherwise stored in the configured PostgreSQL database and served through the Django API.
+* Django `DEBUG=False`
+* secure session and CSRF cookies
+* explicit CORS origins
+* explicit CSRF trusted origins
+* credentialed API requests
+* CSRF protection on mutating requests
+* PostgreSQL not exposed publicly
+* secrets stored outside source control
+* role-based authorization for colony operations
 
-No colony data is intentionally sent to an external AI service during normal application operation.
-
-Secrets such as:
-
-* Django secret keys,
-* database passwords,
-* GitHub OAuth client secrets,
-
-must be supplied through environment variables and must not be committed to the repository.
-
----
+No application secrets are intentionally committed to the repository.
 
 ## Accessibility
 
-The application is designed around standard semantic HTML controls and labeled form fields.
+The interface uses semantic HTML, explicit form labels, keyboard-accessible controls, visible status/error messaging, and text in addition to visual status indicators.
 
-The final accessibility review includes:
+The application is designed to remain usable at increased browser zoom and with responsive/mobile layouts.
 
-* keyboard navigation,
-* visible focus state,
-* sufficient contrast,
-* form labels,
-* status messages that do not rely exclusively on color,
-* usable layouts at 200% browser zoom,
-* sufficiently large mobile action targets.
+## Known limitations and future work
 
-A final accessibility and physical-device QA pass is still pending.
+Given the time-boxed nature of the assignment, several production features were intentionally scoped out.
 
----
+Potential extensions include:
 
-## Known Limitations
+* read-only IndexedDB caching for unreliable network conditions
+* robust offline synchronization and conflict resolution
+* institutional OIDC/SSO integration
+* administrator-managed role provisioning
+* protocol and colony-size limits
+* genotype tracking
+* pedigree and breeding visualization
+* litter-management workflows
+* automated alerts and reminders
+* OCR-assisted cage-card ingestion
+* more comprehensive reporting and per-diem exports
+* automated database backup scheduling
+* broader automated test coverage
 
-The current implementation intentionally prioritizes colony location integrity and common husbandry workflows over breadth.
+The focus of this implementation is the core colony workflow: reliable identity and location tracking, temporal history, husbandry records, ownership and coverage, auditability, reversible operations, spreadsheet ingestion, and practical mobile access.
 
-Known limitations include:
+## AI-assisted development
 
-* CSV import expects predefined columns rather than arbitrary column mapping.
-* XLSX import/export is not currently implemented.
-* Dedicated per-diem reporting is not currently implemented.
-* Room-scoped authorization exists in the data model but is not yet enforced.
-* Full offline mutation/synchronization is not implemented.
-* Breeding and pedigree workflows are not fully surfaced in the UI.
-* Protocol-limit alerts are not implemented.
-* OCR cage-card ingestion is not implemented.
-* Some undo functionality is limited to explicitly supported operational workflows.
-* Production deployment and final mobile/accessibility verification are pending.
+AI tools were used during development for architecture discussion, code review, debugging, and implementation assistance.
 
-These limitations were preferred over implementing broader features at the expense of the integrity of animal location, history, authorization, and audit workflows.
-
----
-
-## Design Priorities
-
-The implementation follows several principles:
-
-1. **Identity is not location.**
-   Animals, cages, racks, and rooms retain stable identities when they move.
-
-2. **Time is first-class data.**
-   Changes create historical intervals rather than overwriting previous truth.
-
-3. **Local identifiers are not primary keys.**
-   Human-entered identifiers can be wrong, reused, or changed.
-
-4. **The database protects important invariants.**
-   Critical physical-location constraints are not enforced only by frontend logic.
-
-5. **Undo creates history rather than deleting it.**
-   Reversals are compensating operations.
-
-6. **Potentially dangerous offline writes are not hidden behind optimistic UX.**
-   Location conflicts require an explicit synchronization strategy.
-
-7. **Common physical workflows should be fast.**
-   Cage records are accessible by QR code and common actions are designed for quick mobile use.
-
----
-
-## Future Work
-
-With additional development time, priorities would include:
-
-* read-only IndexedDB caching for patchy connectivity,
-* interactive spreadsheet column mapping,
-* XLSX and per-diem exports,
-* richer breeding/litter workflows,
-* stronger room-scoped authorization,
-* protocol and capacity alerts,
-* expanded automated test coverage,
-* production backup automation,
-* additional mobile workflow optimization.
-
----
-
-## AI-Assisted Development
-
-AI tools were used during development for architecture discussion, implementation assistance, debugging, and code review.
-
-AI-generated suggestions were treated as proposals rather than authoritative output. Generated code was reviewed against the existing data model and tested before inclusion.
-
-See [`AI_NOTES.md`](AI_NOTES.md) for details about the tools used, examples of incorrect or incomplete AI suggestions, and the verification process.
-
----
+All generated code was reviewed and tested before inclusion. Specific examples of useful and incorrect AI suggestions, along with verification performed during development, are documented in [`AI_NOTES.md`](AI_NOTES.md).
 
 ## License
 

@@ -29,10 +29,12 @@ export class AnimalImportComponent {
   error = signal('');
   committing = signal(false);
   commitMessage = signal('');
+  undoing = signal(false);
+  undoMessage = signal('');
 
   constructor(
     private importService: ImportService,
-  ) {}
+  ) { }
 
   onFileSelected(
     event: Event,
@@ -45,6 +47,8 @@ export class AnimalImportComponent {
     this.selectedFile.set(file);
     this.preview.set(null);
     this.error.set('');
+    this.commitMessage.set('');
+    this.undoMessage.set('');
   }
 
   previewImport(): void {
@@ -115,7 +119,7 @@ export class AnimalImportComponent {
     const batch = this.preview();
 
     if (!batch) {
-        return;
+      return;
     }
 
     this.committing.set(true);
@@ -123,29 +127,82 @@ export class AnimalImportComponent {
     this.commitMessage.set('');
 
     this.importService
-        .commitAnimalImport(batch.id)
-        .subscribe({
+      .commitAnimalImport(batch.id)
+      .subscribe({
         next: (response) => {
-            this.preview.set(response.batch);
+          this.preview.set(response.batch);
 
-            this.commitMessage.set(
+          this.commitMessage.set(
             `Imported ${response.committed_count} animal` +
             `${response.committed_count === 1 ? '' : 's'}. ` +
             `${response.skipped_count} row` +
             `${response.skipped_count === 1 ? '' : 's'} skipped.`,
-            );
+          );
 
-            this.committing.set(false);
+          this.committing.set(false);
         },
 
         error: (error) => {
-            this.error.set(
+          this.error.set(
             error.error?.detail ??
             'Unable to import animals.',
-            );
+          );
 
-            this.committing.set(false);
+          this.committing.set(false);
         },
-        });
+      });
+  }
+
+  undoImport(): void {
+    const batch = this.preview();
+
+    if (!batch) {
+      return;
     }
+
+    if (
+      batch.status !== 'committed' &&
+      batch.status !== 'committed_with_errors'
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Undo this import? All animals created by this import ' +
+      'will be removed if no later activity exists.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.undoing.set(true);
+    this.error.set('');
+    this.undoMessage.set('');
+
+    this.importService
+      .undoAnimalImport(batch.id)
+      .subscribe({
+        next: (response) => {
+          this.preview.set(response.batch);
+
+          this.undoMessage.set(
+            `Import undone. ${response.undone_count} animal` +
+            `${response.undone_count === 1 ? '' : 's'} removed.`,
+          );
+
+          this.commitMessage.set('');
+          this.undoing.set(false);
+        },
+
+        error: (error) => {
+          this.error.set(
+            error.error?.detail ??
+            'Unable to undo this import.',
+          );
+
+          this.undoing.set(false);
+        },
+      });
+  }
 }

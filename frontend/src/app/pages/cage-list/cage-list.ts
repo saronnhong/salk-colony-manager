@@ -20,6 +20,9 @@ export class CageList implements OnInit {
   loading = signal(true);
   error = signal('');
 
+  pageSize = 10;
+  currentPage: number = 0;
+
   constructor(
     private cageService: CageService,
     private exportService: ExportService,
@@ -56,8 +59,47 @@ export class CageList implements OnInit {
   }
 
   goToAnimalImport(): void {
-  this.router.navigate([
-    '/imports/animals',
-  ]);
-}
+    this.router.navigate([
+      '/imports/animals',
+    ]);
+  }
+
+  get paginatedCages() {
+    const start =
+      this.currentPage * this.pageSize;
+
+    const end =
+      start + this.pageSize;
+
+    return this.cages().slice(start, end);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(
+      this.cages().length / this.pageSize,
+    );
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.scrollToCageList();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.scrollToCageList();
+    }
+  }
+
+  private scrollToCageList(): void {
+    document
+      .getElementById('cage-list')
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+  }
 }

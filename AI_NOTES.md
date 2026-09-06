@@ -1,43 +1,63 @@
 # AI Notes
 
-AI tools were used throughout this project as development assistants. I used them to discuss architecture and data-model tradeoffs, generate implementation starting points, review code, troubleshoot errors, and identify edge cases. All generated code was reviewed and tested before being included.
+AI tools were used as development assistants throughout this project. I used **Claude/Claude Code**, **GitHub Copilot**, and **ChatGPT** for architecture discussion, implementation suggestions, debugging, and code review.
 
-## Tools Used
+## How I used AI
 
-* **Claude / Claude Code** — architecture discussions, data-model review, multi-file implementation planning, and code review.
-* **GitHub Copilot** — inline code completion, repetitive implementation work, and boilerplate.
-* **ChatGPT** — architecture discussion, implementation guidance, debugging, test planning, and documentation.
+**Claude / Claude Code** was primarily useful for higher-level and multi-file work: reviewing the temporal data model, discussing API and authorization design, evaluating database constraints, and reasoning about deployment and testing.
 
-I generally used AI for larger design discussions before implementation, then used inline assistance while coding and manually tested the resulting workflows.
+**GitHub Copilot** was primarily used inside the editor for smaller implementation tasks such as Angular components, Django/DRF boilerplate, serializers, views, and repetitive code.
 
-## Examples Where AI Was Wrong or Incomplete
+**ChatGPT** was used for incremental implementation planning, debugging, reviewing architecture decisions, deployment troubleshooting, and identifying acceptance tests.
 
-**1. Assumptions about the existing Django models**
+I treated AI output as a starting point rather than automatically accepting generated code.
 
-AI occasionally generated code based on assumed field names or types that did not match the actual models. For example, import logic initially treated `Animal.strain` like a string even though it is a foreign key to `Strain`. I corrected the implementation to resolve and assign the actual `Strain` instance and verified the importer against PostgreSQL.
+## Examples where AI output needed correction
 
-**2. Missing dependencies between generated changes**
+### 1. Importer assumed the wrong data model
 
-While adding cage responsibility/coverage, generated code referenced `CageResponsibilityAssignmentSerializer` and `assign_cage_responsibility` from the view before the corresponding imports were present. Django exposed these as `NameError` exceptions during testing. I traced the errors, corrected the imports, and retested the complete Angular → REST API → PostgreSQL workflow.
+An AI-generated importer initially treated strain information like a plain string. In the actual application, `Animal.strain` is a foreign key to `Strain`.
 
-**3. GitHub OAuth vs. OIDC**
+I reviewed the model and changed the importer to resolve the existing `Strain` record before creating the animal. This reinforced the importance of checking generated code against the actual schema rather than relying on assumed field types.
 
-The assignment's authentication wording led to discussion of GitHub and OIDC. Standard GitHub end-user login is an OAuth flow and should not simply be described as GitHub OIDC. I kept the implementation and documentation explicit about this distinction rather than presenting the authentication mechanism as something it is not.
+### 2. Demo seed was not actually idempotent
 
-## What I Verified
+The initial demo seed appeared idempotent but failed on its second execution for animals that had been marked deceased.
+
+The generated logic checked only whether an animal had a **current** cage assignment. Deceased animals had historical assignments but no current assignment, so the second seed attempted to create another overlapping assignment and PostgreSQL correctly rejected it.
+
+I traced the exclusion-constraint failure and changed the seed to check for any existing assignment history before creating the initial assignment.
+
+### 3. GitHub authentication terminology
+
+AI suggestions initially risked treating GitHub user authentication as OIDC because the assignment requested an OIDC demonstration.
+
+After checking the actual authentication mechanism, I documented it accurately: GitHub's normal web user-login flow is OAuth 2.0, while GitHub separately provides OIDC for GitHub Actions. I chose not to label an OAuth implementation as OIDC simply to match the assignment wording.
+
+## What I manually verified
 
 I manually exercised the major application workflows, including:
 
-* GitHub authentication and role-based authorization
-* animal and cage moves and location history
-* husbandry recording and corrections
+* GitHub login/logout and session persistence
+* role-based authorization
+* cage and animal location display
+* animal moves and location history
+* cage moves and location history
+* PostgreSQL conflict constraints
+* husbandry event creation
+* audit history
+* undoing animal and cage moves
 * cage ownership and temporary coverage
-* audit history and supported undo operations
-* CSV import preview, validation, partial commit, duplicate-file protection, and whole-import undo
-* active-animal census CSV export
-* QR cage records and printable cage cards
-* deterministic demo-data generation and rerunning the seed without duplicating the colony
+* CSV preview and partial validation
+* CSV commit and duplicate-file protection
+* whole-import undo and its safety checks
+* census CSV export
+* printable cage cards and QR navigation
+* deterministic demo-data seeding and repeated seed execution
+* production frontend/backend communication
+* CSRF-protected production writes
+* mobile Safari authentication and navigation
 
-I also reviewed database constraints and transaction boundaries for operations where concurrent or partial writes could create invalid colony state.
+I also reviewed generated code against the Django models and database constraints rather than assuming generated interfaces or field names were correct.
 
-AI output was treated as a starting point rather than a source of truth; implementation decisions were checked against the actual application models, database behavior, assignment requirements, and observed runtime results.
+AI accelerated implementation and helped surface design alternatives, but the final architecture, tradeoffs, debugging decisions, and submitted code were reviewed and tested by me.

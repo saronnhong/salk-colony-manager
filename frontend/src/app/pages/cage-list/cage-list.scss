@@ -71,3 +71,20 @@ h1 {
   justify-content: flex-end;
   margin-bottom: 1rem;
 }
+
+#cage-list {
+  scroll-margin-top: 100px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.pagination-status {
+  font-weight: 500;
+}

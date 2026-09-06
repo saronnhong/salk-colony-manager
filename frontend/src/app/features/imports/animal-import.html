@@ -97,28 +97,52 @@
                 }
             </div>
 
-            <button type="button" class="commit-button" [disabled]="
-      validRowCount() === 0 ||
-      committing() ||
-      batch.status === 'committed' ||
-      batch.status === 'committed_with_errors'
-    " (click)="commitImport()">
-                @if (committing()) {
-                Importing...
-                } @else if (
+            <div class="commit-actions">
+                <button type="button" class="commit-button" [disabled]="
+        validRowCount() === 0 ||
+        committing() ||
+        batch.status === 'committed' ||
+        batch.status === 'committed_with_errors' ||
+        batch.status === 'undone'
+      " (click)="commitImport()">
+                    @if (committing()) {
+                    Importing...
+                    } @else if (batch.status === 'undone') {
+                    Import undone
+                    } @else if (
+                    batch.status === 'committed' ||
+                    batch.status === 'committed_with_errors'
+                    ) {
+                    Import complete
+                    } @else {
+                    Import valid rows
+                    }
+                </button>
+
+                @if (
                 batch.status === 'committed' ||
                 batch.status === 'committed_with_errors'
                 ) {
-                Import complete
-                } @else {
-                Import valid rows
+                <button type="button" class="undo-button" [disabled]="undoing()" (click)="undoImport()">
+                    @if (undoing()) {
+                    Undoing...
+                    } @else {
+                    Undo Import
+                    }
+                </button>
                 }
-            </button>
+            </div>
         </div>
 
         @if (commitMessage()) {
         <div class="success-message" role="status">
             {{ commitMessage() }}
+        </div>
+        }
+
+        @if (undoMessage()) {
+        <div class="success-message" role="status">
+            {{ undoMessage() }}
         </div>
         }
 
@@ -200,10 +224,13 @@
 
                         <td>
                             <span class="status-badge" [class.status-valid]="
-                      row.parse_status === 'valid'
-                    " [class.status-invalid]="
-                      row.parse_status === 'invalid'
-                    ">
+    row.parse_status === 'valid' ||
+    row.parse_status === 'committed'
+  " [class.status-invalid]="
+    row.parse_status === 'invalid'
+  " [class.status-undone]="
+    row.parse_status === 'undone'
+  ">
                                 {{ row.parse_status }}
                             </span>
                         </td>
