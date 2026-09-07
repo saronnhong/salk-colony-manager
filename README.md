@@ -1,7 +1,7 @@
 # Animal Colony Manager
 
 **Live application:** https://colony.saronnhong.com
-**API:** https://api.saronnhong.com
+
 **Demo video:** `<ADD VIDEO LINK>`
 
 A full-stack animal colony management application built for the Salk Institute AIRC Research Software Engineer take-home assignment.
@@ -10,7 +10,7 @@ The application is designed for research labs that need to track animals, cages,
 
 ## Features
 
-### Colony location tracking
+### Colony Location Tracking
 
 The application models physical location separately from identity:
 
@@ -27,13 +27,13 @@ Database constraints prevent conflicting current assignments, including:
 * multiple cages occupying the same rack position at the same time
 * a rack occupying multiple rooms at the same time
 
-### Animal and cage history
+### Animal and Cage History
 
 Animal and cage detail pages display current location information and location history.
 
 Moves are recorded as first-class operations containing information about who performed the action, when it occurred, and why.
 
-### Husbandry events
+### Husbandry Events
 
 Users can record husbandry events including:
 
@@ -43,20 +43,16 @@ Users can record husbandry events including:
 * cage changes
 * transfers
 * deaths
-* weaning
-* tail snips
 
-The application distinguishes the time an event occurred from the time it was recorded. This allows users to enter events later while preserving the actual event date.
+Husbandry records preserve both event time and recorded time, allowing late-entered events to retain their actual occurrence date.
 
-Husbandry events also support corrections so historical information does not have to be silently overwritten.
-
-### Ownership and vacation coverage
+### Ownership and Vacation Coverage
 
 Cages can have a primary responsible user as well as temporary coverage assignments.
 
 Coverage includes a validity period, allowing another lab member to cover cages during vacations or other absences without replacing the underlying primary ownership history.
 
-### Audit history and undo
+### Audit History and Undo
 
 Important colony operations create audit records identifying:
 
@@ -68,7 +64,7 @@ Important colony operations create audit records identifying:
 
 Animal and cage moves can be undone through compensating operations. Undo does not erase the original action; both the original operation and its reversal remain in the audit history.
 
-### Spreadsheet import
+### Spreadsheet Import
 
 CSV animal imports use a two-stage workflow:
 
@@ -93,24 +89,11 @@ Imports are represented as batches, allowing the entire import to be undone as a
 
 The import batch and audit history remain after undo, providing traceability rather than silently erasing the operation.
 
-### Census export
+### Census Export
 
-The colony can be exported as CSV with current animal and location information, including:
+The active colony census can be exported as CSV with animal identifiers, demographics, strain, and current cage/rack/room location. Retired or deceased animals are excluded.
 
-* animal ID
-* local identifier
-* sex
-* date of birth
-* species
-* strain
-* cage
-* rack
-* rack position
-* room
-
-Retired/deceased animals are excluded from the active census.
-
-### QR cage cards
+### QR Cage Cards
 
 Each cage has a printable cage card containing a QR code.
 
@@ -118,19 +101,9 @@ Scanning the QR code opens the cage directly in the web application, providing a
 
 Cards can also be printed or saved as PDF for placement on physical cages.
 
-### Mobile workflow
+## Authentication and Authorization
 
-The application uses responsive layouts and large interaction targets for common colony workflows.
-
-The hosted application has been tested with mobile Safari, including GitHub authentication and QR-code navigation.
-
-The interface is intended to keep common tasks such as opening a cage, recording husbandry information, and reviewing location information short and direct.
-
-## Authentication and authorization
-
-The application demonstrates authentication using GitHub.
-
-GitHub's standard web user authentication flow is OAuth 2.0 rather than a general-purpose OpenID Connect user-login implementation. GitHub does separately support OIDC for GitHub Actions. This distinction is documented rather than describing GitHub OAuth as OIDC.
+Authentication is demonstrated using GitHub OAuth 2.0. GitHub's standard user-login flow is OAuth rather than OIDC; GitHub's OIDC support applies separately to GitHub Actions.
 
 Authorization is handled independently from authentication.
 
@@ -148,35 +121,17 @@ For the hosted demonstration, newly authenticated GitHub users are automatically
 
 A production deployment would instead use controlled role provisioning tied to institutional identity and authorization policies.
 
-## Data model
+## Data Model
 
-The database is normalized around stable entity identities and temporal assignment records.
+The database is normalized around stable entity identities and temporal assignment records. Animals, cages, racks, positions, and rooms are separate entities, while assignment tables preserve how their relationships change over time.
 
-Important entities include:
-
-* `Animal`
-* `AnimalLocalIdentifier`
-* `Cage`
-* `Rack`
-* `RackPosition`
-* `Room`
-* `AnimalCageAssignment`
-* `CageRackPositionAssignment`
-* `RackRoomAssignment`
-* `HusbandryEvent`
-* `CageResponsibility`
-* `AuditOperation`
-* `AuditLog`
-* `ImportBatch`
-* `ImportRow`
-
-### Local identifiers
+### Local Identifiers
 
 Local animal identifiers are deliberately not primary keys.
 
 Identifiers such as ear tags may be entered incorrectly, reused, or meaningful only within a particular laboratory workflow. Animals therefore use stable UUID primary keys while local identifiers are modeled separately.
 
-### Time and current state
+### Time and Current State
 
 Temporal assignment records use validity intervals to represent when a location was true in the real world.
 
@@ -193,64 +148,31 @@ PostgreSQL exclusion constraints provide a database-level integrity backstop aga
 * Angular
 * TypeScript
 * Angular Material
-* Angular signals
-* PWA/service worker support
 
 ### Backend
 
 * Python
 * Django
 * Django REST Framework
-* django-allauth
 * PostgreSQL
-* Gunicorn
-* Nginx
+* GitHub OAuth
 
-### Hosting
+### Deployment
 
-Frontend:
-
-* Amazon S3
-* Amazon CloudFront
-* HTTPS
-* `colony.saronnhong.com`
-
-Backend:
-
+* Amazon S3 and CloudFront
 * AWS Lightsail
-* Ubuntu
-* PostgreSQL
-* Gunicorn
-* Nginx
-* HTTPS
-* `api.saronnhong.com`
 
-## Demo data
+## Demo Data
 
-The application includes a deterministic demo-data management command that creates a realistic colony containing approximately 360 animals distributed across:
+The included `seed_demo` management command creates a deterministic colony of approximately 360 animals across 90 cages and six racks, including multiple strains, location history, husbandry events, deaths, cage ownership, and temporary coverage.
 
-* multiple rooms
-* six racks
-* approximately 90 cages
-* multiple mouse strains
-* primary cage responsibilities
-* temporary vacation coverage
-* animal movement history
-* cage movement history
-* weights
-* health checks
-* treatments
-* deaths/retired animals
-
-The seed command is designed to be idempotent and can be run repeatedly without recreating the colony.
-
-Run it with:
+The command is idempotent and can be safely run repeatedly.
 
 ```bash
 python manage.py seed_demo
 ```
 
-## Running locally
+## Running Locally
 
 ### Backend
 
@@ -268,13 +190,18 @@ Create a PostgreSQL database and configure the required environment variables in
 Example development configuration:
 
 ```text
-DEBUG=True
+DEBUG=False
 IS_PRODUCTION=False
 FRONTEND_URL=http://localhost:4200
-ALLOWED_HOSTS=localhost,127.0.0.1
+ALLOWED_HOSTS=localhost,127.0.0.1,52.88.174.187,api.saronnhong.com
 GITHUB_CLIENT_ID=<github-oauth-client-id>
 GITHUB_CLIENT_SECRET=<github-oauth-client-secret>
 DJANGO_SECRET_KEY=<development-secret>
+DB_NAME=colony_manager
+DB_USER=<database-user>
+DB_PASSWORD=<database-password>
+DB_HOST=localhost
+DB_PORT=5432
 ```
 
 Database credentials are also supplied through environment variables and are not committed to the repository.
@@ -321,41 +248,17 @@ http://localhost:4200
 
 The development frontend environment points API requests to the local Django server.
 
-## GitHub authentication setup
+## GitHub Authentication Setup
 
-A GitHub OAuth application is required for local authentication.
+Create a GitHub OAuth application and use the following development callback URL:
 
-Development callback URL:
+`http://localhost:8000/accounts/github/login/callback/`
 
-```text
-http://localhost:8000/accounts/github/login/callback/
-```
+Set the client ID and secret in backend/.env. OAuth credentials and application secrets are not committed to source control.
 
-The hosted deployment uses a separate OAuth application because GitHub OAuth applications support a configured callback URL.
+## Backup and Restore
 
-Production callback:
-
-```text
-https://api.saronnhong.com/accounts/github/login/callback/
-```
-
-OAuth client secrets and Django secrets are supplied through environment variables and are not stored in source control.
-
-## Offline and unreliable network design
-
-The application is installable as an Angular PWA and uses a service worker for application assets.
-
-Full offline mutation/synchronization was intentionally not implemented.
-
-Animal moves, cage moves, husbandry events, and other writes have integrity and ordering consequences. Queuing these writes independently on multiple offline devices could create conflicts such as two users assigning the same cage or animal to different locations.
-
-A production extension would cache read-only cage and animal information locally while clearly indicating that the information may be stale. Mutating operations would require connectivity unless a dedicated synchronization/conflict-resolution protocol were introduced.
-
-The application therefore does not silently claim successful colony writes while offline.
-
-## Backup and restore
-
-The PostgreSQL database is designed to be backed up using `pg_dump`.
+The PostgreSQL database can be backed up using `pg_dump` and restored using `pg_restore`.
 
 Example:
 
@@ -376,27 +279,7 @@ pg_restore \
   colony_manager.dump
 ```
 
-Production database credentials should be supplied through environment variables or PostgreSQL configuration rather than embedded in backup scripts.
-
-For a production research system, backups should be automated, encrypted, stored separately from the application host, and periodically restore-tested.
-
-## Security
-
-The deployed application uses HTTPS for both frontend and API traffic.
-
-Production configuration includes:
-
-* Django `DEBUG=False`
-* secure session and CSRF cookies
-* explicit CORS origins
-* explicit CSRF trusted origins
-* credentialed API requests
-* CSRF protection on mutating requests
-* PostgreSQL not exposed publicly
-* secrets stored outside source control
-* role-based authorization for colony operations
-
-No application secrets are intentionally committed to the repository.
+Production backups should be automated, stored separately from the application host, and periodically restore-tested.
 
 ## Accessibility
 
@@ -404,34 +287,16 @@ The interface uses semantic HTML, explicit form labels, keyboard-accessible cont
 
 The application is designed to remain usable at increased browser zoom and with responsive/mobile layouts.
 
-## Known limitations and future work
+## Known Limitations and Future Work
 
-Given the time-boxed nature of the assignment, several production features were intentionally scoped out.
+This time-boxed implementation focuses on the core colony-management workflow. Potential future work includes:
 
-Potential extensions include:
+* **Offline support:** writes currently require connectivity to avoid conflicting animal or cage locations. Future work could add read-only caching and conflict-aware synchronization.
+* **Institutional authentication:** replace demo GitHub authentication and automatic role assignment with institutional SSO and administrator-managed permissions.
+* **Advanced colony management:** expand support for breeding, litters, pedigrees, genotypes, protocol limits, and automated alerts.
 
-* read-only IndexedDB caching for unreliable network conditions
-* robust offline synchronization and conflict resolution
-* institutional OIDC/SSO integration
-* administrator-managed role provisioning
-* protocol and colony-size limits
-* genotype tracking
-* pedigree and breeding visualization
-* litter-management workflows
-* automated alerts and reminders
-* OCR-assisted cage-card ingestion
-* more comprehensive reporting and per-diem exports
-* automated database backup scheduling
-* broader automated test coverage
-
-The focus of this implementation is the core colony workflow: reliable identity and location tracking, temporal history, husbandry records, ownership and coverage, auditability, reversible operations, spreadsheet ingestion, and practical mobile access.
-
-## AI-assisted development
+## AI-Assisted Development
 
 AI tools were used during development for architecture discussion, code review, debugging, and implementation assistance.
 
 All generated code was reviewed and tested before inclusion. Specific examples of useful and incorrect AI suggestions, along with verification performed during development, are documented in [`AI_NOTES.md`](AI_NOTES.md).
-
-## License
-
-See [`LICENSE`](LICENSE).

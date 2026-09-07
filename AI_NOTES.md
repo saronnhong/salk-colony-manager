@@ -1,14 +1,12 @@
 # AI Notes
 
-AI tools were used as development assistants throughout this project. I used **Claude/Claude Code**, **GitHub Copilot**, and **ChatGPT** for architecture discussion, implementation suggestions, debugging, and code review.
+AI tools were used as development assistants throughout this project. I primarily used **Claude/Claude Code** and **ChatGPT** for architecture discussion, implementation assistance, debugging, and code review.
 
 ## How I used AI
 
-**Claude / Claude Code** was primarily useful for higher-level and multi-file work: reviewing the temporal data model, discussing API and authorization design, evaluating database constraints, and reasoning about deployment and testing.
+**Claude / Claude Code** was used for code generation and multi-file implementation work, as well as reviewing the temporal data model, API design, database constraints, and authorization approach.
 
-**GitHub Copilot** was primarily used inside the editor for smaller implementation tasks such as Angular components, Django/DRF boilerplate, serializers, views, and repetitive code.
-
-**ChatGPT** was used for incremental implementation planning, debugging, reviewing architecture decisions, deployment troubleshooting, and identifying acceptance tests.
+**ChatGPT** was used throughout development for incremental implementation planning, architecture review, debugging, deployment troubleshooting, testing strategy, and reviewing tradeoffs as the application evolved.
 
 I treated AI output as a starting point rather than automatically accepting generated code.
 
@@ -36,28 +34,10 @@ After checking the actual authentication mechanism, I documented it accurately: 
 
 ## What I manually verified
 
-I manually exercised the major application workflows, including:
+I manually tested the major end-to-end workflows, including authentication and authorization, animal and cage moves, temporal location history, husbandry events, audit/undo behavior, coverage assignments, CSV import/export, import undo safety, QR cage cards, and repeated demo-data seeding.
 
-* GitHub login/logout and session persistence
-* role-based authorization
-* cage and animal location display
-* animal moves and location history
-* cage moves and location history
-* PostgreSQL conflict constraints
-* husbandry event creation
-* audit history
-* undoing animal and cage moves
-* cage ownership and temporary coverage
-* CSV preview and partial validation
-* CSV commit and duplicate-file protection
-* whole-import undo and its safety checks
-* census CSV export
-* printable cage cards and QR navigation
-* deterministic demo-data seeding and repeated seed execution
-* production frontend/backend communication
-* CSRF-protected production writes
-* mobile Safari authentication and navigation
+I also tested the deployed application on desktop and mobile Safari, including authenticated API requests and CSRF-protected writes.
 
-I also reviewed generated code against the Django models and database constraints rather than assuming generated interfaces or field names were correct.
+Generated code was reviewed against the Django models, database constraints, and actual application behavior rather than assuming generated interfaces or field names were correct.
 
-AI accelerated implementation and helped surface design alternatives, but the final architecture, tradeoffs, debugging decisions, and submitted code were reviewed and tested by me.
+AI accelerated development and helped surface design alternatives, but the final architecture, tradeoffs, debugging decisions, and submitted code were reviewed and tested by me.
