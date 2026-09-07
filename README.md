@@ -174,6 +174,13 @@ python manage.py seed_demo
 
 ## Running Locally
 
+### Clone Repository
+
+```bash 
+git clone https://github.com/saronnhong/salk-colony-manager.git salk-colony-manager
+cd salk-colony-manager
+```
+
 ### Backend
 
 Create and activate a virtual environment:
@@ -185,7 +192,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create a PostgreSQL database and configure the required environment variables in `backend/.env`.
+Create a local PostgreSQL database:
+
+```bash
+createdb colony_manager
+```
+
+Configure the required environment variables in `backend/.env`.
 
 Example development configuration:
 
