@@ -580,30 +580,19 @@ class Command(BaseCommand):
                 ),
             )
     def get_assigned_by_user(self):
-        user = (
-            User.objects
-            .filter(is_superuser=True)
-            .order_by("id")
-            .first()
+        User = get_user_model()
+
+        user, _ = User.objects.get_or_create(
+            username="demo-seed-user",
+            defaults={
+                "first_name": "Demo",
+                "last_name": "Seeder",
+                "email": "demo-seed@example.invalid",
+                "is_active": False,
+            },
         )
 
-        if user:
-            return user
-
-        user = (
-            User.objects
-            .filter(is_active=True)
-            .order_by("id")
-            .first()
-        )
-
-        if user:
-            return user
-
-        raise RuntimeError(
-            "Create at least one Django user before running "
-            "seed_demo."
-        )
+        return user
 
     def create_strains(self):
         strain_names = [
