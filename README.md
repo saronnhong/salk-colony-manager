@@ -2,7 +2,7 @@
 
 **Live application:** https://colony.saronnhong.com
 
-**Demo video:** `<ADD VIDEO LINK>`
+**Demo video:** https://youtu.be/L8bycSaD_xo?si=6WFI6inv9l8_LzhD
 
 A full-stack animal colony management application built for the Salk Institute AIRC Research Software Engineer take-home assignment.
 
