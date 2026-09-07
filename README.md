@@ -237,12 +237,6 @@ Start Django:
 python manage.py runserver
 ```
 
-The development API runs at:
-
-```text
-http://localhost:8000
-```
-
 ### Frontend
 
 From the frontend directory:
